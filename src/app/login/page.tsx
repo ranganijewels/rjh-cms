@@ -1,11 +1,21 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { signIn } from '@/lib/auth'
 import BrandMark from '@/components/BrandMark'
 
+// useSearchParams() requires a Suspense boundary during static prerendering
+// (Next.js App Router build fails otherwise: "missing Suspense boundary").
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
+  )
+}
+
+function LoginForm() {
   const router = useRouter()
   const search = useSearchParams()
   const redirect = search.get('redirect') || '/dashboard'
