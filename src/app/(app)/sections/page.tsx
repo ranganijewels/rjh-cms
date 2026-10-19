@@ -43,7 +43,7 @@ function toApi(s: Section, pageSlug: string): any {
   }
 }
 
-const PAGES = ['homepage', 'about-us', 'contact-us', 'blog', 'blogs', 'collections']
+const PAGES = ['homepage', 'about-us', 'contact-us', 'blog', 'collections']
 
 export default function SectionsPage() {
   const [pageSlug, setPageSlug] = useState('homepage')

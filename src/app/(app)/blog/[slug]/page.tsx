@@ -8,13 +8,16 @@ import api from '@/lib/api'
 
 export default function BlogEditor() {
   const { slug } = useParams<{ slug: string }>()
+  // Field names match the API entity (cms_blogs) exactly, so this editor and
+  // Admin → CMS → Blog Manager always read and write the same values.
   const [form, setForm] = useState({
     title: '',
     excerpt: '',
-    body: '',
-    tag: '',
-    cover_image: '',
-    is_published: false,
+    content: '',
+    tags: '',
+    featuredImageUrl: '',
+    author: '',
+    isPublished: false,
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -22,16 +25,17 @@ export default function BlogEditor() {
 
   useEffect(() => {
     api
-      .get(`/cms/blogs/${slug}`)
+      .get(`/cms/blogs/admin/slug/${slug}`)
       .then((r) => {
         const p = r.data?.data || {}
         setForm({
           title: p.title || '',
           excerpt: p.excerpt || '',
-          body: p.body || p.content || '',
-          tag: p.tag || '',
-          cover_image: p.cover_image || p.image || '',
-          is_published: p.is_published || false,
+          content: p.content || '',
+          tags: Array.isArray(p.tags) ? p.tags.join(', ') : '',
+          featuredImageUrl: p.featuredImageUrl || '',
+          author: p.author || '',
+          isPublished: p.isPublished === true,
         })
       })
       .catch(() => {})
@@ -42,7 +46,10 @@ export default function BlogEditor() {
     setSaving(true)
     setMessage('')
     try {
-      await api.put(`/cms/blogs/${slug}`, form)
+      await api.put(`/cms/blogs/${slug}`, {
+        ...form,
+        tags: form.tags.split(',').map((t) => t.trim()).filter(Boolean),
+      })
       setMessage('Saved')
     } catch (e: any) {
       setMessage(e?.response?.data?.message || 'Failed to save')
@@ -84,19 +91,19 @@ export default function BlogEditor() {
             <label className="form-label mt-4">Body</label>
             <textarea
               className="form-textarea min-h-[400px] font-mono text-xs"
-              value={form.body}
-              onChange={(e) => set('body', e.target.value)}
+              value={form.content}
+              onChange={(e) => set('content', e.target.value)}
             />
           </div>
         </div>
         <div className="space-y-5">
           <div className="card p-5">
             <label className="form-label">Cover image URL</label>
-            <input className="form-input" value={form.cover_image} onChange={(e) => set('cover_image', e.target.value)} />
-            {form.cover_image && (
+            <input className="form-input" value={form.featuredImageUrl} onChange={(e) => set('featuredImageUrl', e.target.value)} />
+            {form.featuredImageUrl && (
               <div className="relative mt-3 rounded-lg w-full h-48 overflow-hidden">
                 <Image
-                  src={form.cover_image}
+                  src={form.featuredImageUrl}
                   alt={form.title ? `Cover image for ${form.title}` : 'Blog cover preview'}
                   fill
                   unoptimized
@@ -104,12 +111,14 @@ export default function BlogEditor() {
                 />
               </div>
             )}
-            <label className="form-label mt-4">Tag / Category</label>
-            <input className="form-input" value={form.tag} onChange={(e) => set('tag', e.target.value)} placeholder="e.g. Buying Guide" />
+            <label className="form-label mt-4">Tags / Categories</label>
+            <input className="form-input" value={form.tags} onChange={(e) => set('tags', e.target.value)} placeholder="e.g. Guides, Engagement" />
+            <label className="form-label mt-4">Author</label>
+            <input className="form-input" value={form.author} onChange={(e) => set('author', e.target.value)} placeholder="Rangani Jewelry House" />
           </div>
           <div className="card p-5">
             <label className="flex items-center gap-2">
-              <input type="checkbox" checked={form.is_published} onChange={(e) => set('is_published', e.target.checked)} />
+              <input type="checkbox" checked={form.isPublished} onChange={(e) => set('isPublished', e.target.checked)} />
               <span className="text-sm">Published</span>
             </label>
           </div>

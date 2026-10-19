@@ -14,10 +14,10 @@ interface Blog {
   id?: string
   slug: string
   title: string
-  is_published?: boolean
-  published_at?: string
-  tag?: string
-  updated_at?: string
+  isPublished?: boolean
+  publishedAt?: string
+  tags?: string[]
+  updatedAt?: string
 }
 
 export default function BlogIndex() {
@@ -28,7 +28,7 @@ export default function BlogIndex() {
 
   useEffect(() => {
     api
-      .get('/cms/blogs')
+      .get('/cms/blogs/admin/all', { params: { limit: 100 } })
       .then((r) => {
         const data = r.data?.data
         setRows(Array.isArray(data) ? data : data?.records || [])
@@ -65,8 +65,8 @@ export default function BlogIndex() {
         columns={[
           { key: 'title', header: 'Title', cell: (r) => <span className="font-medium text-slate-900">{r.title}</span> },
           { key: 'slug', header: 'Slug', cell: (r) => <code className="text-xs text-slate-500">{r.slug}</code> },
-          { key: 'tag', header: 'Tag', cell: (r) => r.tag ? <span className="badge bg-blue-50 text-blue-700">{r.tag}</span> : <span className="text-slate-400">—</span> },
-          { key: 'status', header: 'Status', cell: (r) => <StatusBadge status={r.is_published ? 'published' : 'draft'} /> },
+          { key: 'tag', header: 'Tags', cell: (r) => r.tags?.length ? <span className="badge bg-blue-50 text-blue-700">{r.tags.join(', ')}</span> : <span className="text-slate-400">—</span> },
+          { key: 'status', header: 'Status', cell: (r) => <StatusBadge status={r.isPublished ? 'published' : 'draft'} /> },
         ]}
         empty={
           <EmptyState

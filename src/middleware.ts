@@ -3,12 +3,20 @@ import type { NextRequest } from 'next/server'
 
 const PUBLIC = ['/login', '/_next', '/favicon', '/api']
 
+// Redirects must use the public address the visitor used (nginx passes it in
+// Host / X-Forwarded-*). req.url carries the app's internal 127.0.0.1 bind address.
+function publicUrl(req: NextRequest, path: string) {
+  const host = req.headers.get('x-forwarded-host') || req.headers.get('host') || req.nextUrl.host
+  const proto = req.headers.get('x-forwarded-proto') || (host.startsWith('localhost') ? 'http' : 'https')
+  return new URL(path, `${proto}://${host}`)
+}
+
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
   if (PUBLIC.some((p) => pathname.startsWith(p))) return NextResponse.next()
   const refresh = req.cookies.get('cms_refresh_token')?.value
   if (!refresh) {
-    const url = new URL('/login', req.url)
+    const url = publicUrl(req, '/login')
     url.searchParams.set('redirect', pathname)
     return NextResponse.redirect(url)
   }

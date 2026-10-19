@@ -26,6 +26,25 @@ export default function InboxView({ title, description, endpoint, fields, primar
   const [setupNeeded, setSetupNeeded] = useState(false)
   const [loadError, setLoadError] = useState(false)
   const [open, setOpen] = useState<any>(null)
+  const [saving, setSaving] = useState(false)
+  const STATUSES = endpoint.includes('appointments')
+    ? ['pending', 'confirmed', 'completed', 'cancelled']
+    : ['new', 'in_progress', 'responded', 'closed']
+  const submittedAt = (r: any) => (r?.createdAt || r?.created_at || '').slice(0, 16).replace('T', ' ')
+
+  // Same record the admin Communication screens read — changing it here
+  // changes it there too.
+  async function setStatus(row: any, status: string) {
+    setSaving(true)
+    try {
+      await api.put(`${endpoint}/${row.id}`, { status })
+      const next = { ...row, status, overdue: false }
+      setRows((rs) => rs.map((r) => (r.id === row.id ? next : r)))
+      setOpen(next)
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const load = () => {
     setLoading(true)
@@ -107,9 +126,11 @@ export default function InboxView({ title, description, endpoint, fields, primar
                   {row[primaryField] || 'Untitled submission'}
                 </div>
                 <div className="text-xs text-slate-500 mt-0.5">
-                  {row.email || row.phone || row.created_at?.slice(0, 10)}
+                  {[row.email || row.phone, submittedAt(row)].filter(Boolean).join(' · ')}
                 </div>
               </div>
+              {row.isTest && <span className="badge bg-amber-50 text-amber-700">test</span>}
+              {row.overdue && <span className="badge bg-red-50 text-red-700">overdue</span>}
               {row.status && (
                 <span className="badge bg-slate-100 text-slate-700">{row.status}</span>
               )}
@@ -135,6 +156,21 @@ export default function InboxView({ title, description, endpoint, fields, primar
                 <X className="w-5 h-5 text-slate-600" />
               </button>
             </div>
+            <div className="px-5 pt-4 flex items-center gap-2">
+              <label htmlFor="submission-status" className="text-xs text-slate-600">Status</label>
+              <select
+                id="submission-status"
+                className="form-input !w-auto !py-1 text-sm"
+                value={open.status || STATUSES[0]}
+                disabled={saving}
+                onChange={(e) => setStatus(open, e.target.value)}
+              >
+                {[...new Set([open.status, ...STATUSES].filter(Boolean))].map((st) => (
+                  <option key={st} value={st}>{st.replace('_', ' ')}</option>
+                ))}
+              </select>
+              {open.isTest && <span className="badge bg-amber-50 text-amber-700">looks like a test</span>}
+            </div>
             <dl className="p-5 space-y-3">
               {fields.map((f) => (
                 <div key={f.key}>
@@ -142,7 +178,7 @@ export default function InboxView({ title, description, endpoint, fields, primar
                   <dd className="text-sm text-slate-900">
                     {f.type === 'long'
                       ? <p className="whitespace-pre-wrap">{open[f.key] || '—'}</p>
-                      : (open[f.key] || <span className="text-slate-600">—</span>)
+                      : (f.key === 'created_at' ? submittedAt(open) : open[f.key]) || <span className="text-slate-600">—</span>
                     }
                   </dd>
                 </div>

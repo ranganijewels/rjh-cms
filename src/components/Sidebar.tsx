@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
+  Film,
   FileText,
   Newspaper,
   HelpCircle,
@@ -36,6 +37,7 @@ const sections = [
       { href: '/customize', icon: Wand2, label: 'Customize Page' },
       { href: '/about', icon: FileText, label: 'About Page' },
       { href: '/pdp', icon: Gem, label: 'Product Detail' },
+      { href: '/instagram', icon: Film, label: 'Instagram Reels' },
       { href: '/banners', icon: ImageIcon, label: 'Banners & Hero' },
       { href: '/sections', icon: LayoutTemplate, label: 'Page Sections' },
       { href: '/navigation', icon: MenuIcon, label: 'Navigation Menu' },

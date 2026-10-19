@@ -12,6 +12,13 @@ function readCookie(name: string): string | null {
 
 export const isVideoUrl = (u: string) => /\.(mp4|webm|ogg|mov)(\?|$)/i.test(u || '')
 
+const STOREFRONT_URL = (process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://www.ranganijewelry.com').replace(/\/+$/, '')
+
+// Site-relative paths ("/images/…") are storefront public assets; resolve them
+// against the storefront so previews here don't break on the CMS origin.
+export const previewUrl = (u: string) =>
+  u && u.startsWith('/') && !u.startsWith('//') ? `${STOREFRONT_URL}${u}` : u
+
 // One multipart POST with a given bearer token. FormData must NOT get a JSON
 // content-type — the browser sets the multipart boundary itself.
 async function postUpload(file: File, prefix: string, token: string | null): Promise<Response> {

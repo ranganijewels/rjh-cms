@@ -2,7 +2,7 @@
 
 import { useId, useRef, useState } from 'react'
 import { UploadCloud, Trash2 } from 'lucide-react'
-import { uploadMedia, isVideoUrl } from '@/lib/upload'
+import { uploadMedia, isVideoUrl, previewUrl } from '@/lib/upload'
 
 /**
  * Image/video field with upload + URL entry + live preview + clear.
@@ -73,9 +73,9 @@ export default function MediaField({
       <div className={`rounded-lg border border-slate-200 bg-slate-50 overflow-hidden ${aspect} flex items-center justify-center relative`}>
         {value ? (
           isVideoUrl(value) ? (
-            <video key={value} src={value} muted playsInline loop autoPlay className="w-full h-full object-cover" />
+            <video key={value} src={previewUrl(value)} muted playsInline loop autoPlay className="w-full h-full object-cover" />
           ) : (
-            <img src={value} alt={label ? `${label} preview` : 'Media preview'} className="w-full h-full object-cover" />
+            <img src={previewUrl(value)} alt={label ? `${label} preview` : 'Media preview'} className="w-full h-full object-cover" />
           )
         ) : (
           <span className="text-xs text-slate-400 px-3 text-center">No media — upload or paste a URL</span>

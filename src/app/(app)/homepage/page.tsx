@@ -351,9 +351,10 @@ function PromoBanner({ sec, onChange, save, onSaved }: any) {
 function Reviews({ sec, onChange, save, onSaved }: any) {
   const c = sec.content
   const reviews: any[] = Array.isArray(c.reviews) ? c.reviews : []
-  const list = useList(reviews, (next) => onChange({ ...c, reviews: next }), () => ({ text: '', description: '', rating: 5, imageUrl: '' }))
+  const list = useList(reviews, (next) => onChange({ ...c, reviews: next }), () => ({ text: '', description: '', rating: 5, imageUrl: '', source: '', consent: false }))
+  const live = reviews.filter((r) => r?.consent === true && String(r?.source || '').trim()).length
   return (
-    <SectionCard title="Customer Reviews" description="Testimonials with optional customer photos." sec={sec} save={save} onSaved={onSaved}>
+    <SectionCard title="Customer Reviews" description={`Testimonials shown on the site. Record each quote's source and the customer's permission (${live} of ${reviews.length} documented).`} sec={sec} save={save} onSaved={onSaved}>
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div>
           <label className="form-label">Heading</label>
@@ -377,6 +378,14 @@ function Reviews({ sec, onChange, save, onSaved }: any) {
                   {[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{n} ★</option>)}
                 </select>
                 <textarea className="form-textarea min-h-[60px]" value={r.description || ''} onChange={(e) => list.update(i, { description: e.target.value })} placeholder="Review text" />
+                <input className="form-input" value={r.source || ''} onChange={(e) => list.update(i, { source: e.target.value })} placeholder="Source / evidence (e.g. Google review link, order #, email date)" />
+                <label className="flex items-center gap-2 text-xs text-slate-600">
+                  <input type="checkbox" checked={r.consent === true} onChange={(e) => list.update(i, { consent: e.target.checked })} />
+                  Customer gave permission to publish this quote and name
+                </label>
+                {!(r.consent === true && String(r.source || '').trim()) && (
+                  <p className="text-xs text-amber-700">No source or permission recorded for this testimonial yet.</p>
+                )}
               </div>
             </div>
           </CardEditor>
