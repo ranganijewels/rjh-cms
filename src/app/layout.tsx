@@ -1,15 +1,28 @@
 import type { Metadata } from 'next'
+import { Cabin } from 'next/font/google'
 import './globals.css'
 
+// Cabin is the CMS typeface: a humanist sans that stays legible at the small
+// sizes the dense content tables are full of, while keeping enough character
+// for headings. The variable font is used, so the whole weight range comes
+// down in a single file.
+const cabin = Cabin({
+  variable: '--font-cabin',
+  subsets: ['latin'],
+  display: 'swap',
+})
+
 export const metadata: Metadata = {
-  title: 'RJ House CMS',
-  description: 'Content management for Rangani Jewellery House',
+  title: 'Rangani CMS Studio',
+  description: 'Content management for Rangani Jewelry House',
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className={cabin.variable}>{children}</body>
     </html>
   )
 }

@@ -14,6 +14,9 @@
   }
   body {
     @apply bg-slate-50 text-slate-900 antialiased;
+    /* The Cabin variable is exposed on <body> by next/font (see layout.tsx);
+       variables inherit, so every descendant resolves it too. */
+    font-family: var(--font-cabin), ui-sans-serif, system-ui, sans-serif;
   }
   /* Global keyboard focus indicator for every interactive element (WCAG 2.4.7). */
   a:focus-visible,

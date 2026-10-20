@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-const PUBLIC = ['/login', '/_next', '/favicon', '/api']
+// Static assets that must stay reachable without a session: framework chunks,
+// the brand logos in /public/brand, the app icon (app/icon.svg is served under
+// /icon) and the API proxy.
+const PUBLIC = ['/login', '/_next', '/favicon', '/icon', '/brand', '/images', '/api']
 
 // Redirects must use the public address the visitor used (nginx passes it in
 // Host / X-Forwarded-*). req.url carries the app's internal 127.0.0.1 bind address.

@@ -18,6 +18,7 @@ import {
   Home as HomeIcon,
   Wand2,
   Gem,
+  LayoutGrid,
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
@@ -41,6 +42,7 @@ const sections = [
       { href: '/banners', icon: ImageIcon, label: 'Banners & Hero' },
       { href: '/sections', icon: LayoutTemplate, label: 'Page Sections' },
       { href: '/navigation', icon: MenuIcon, label: 'Navigation Menu' },
+      { href: '/mega-menu', icon: LayoutGrid, label: 'Mega Menu' },
       { href: '/theme', icon: Palette, label: 'Theme & Branding' },
     ],
   },
@@ -93,12 +95,12 @@ export default function Sidebar() {
     >
       <div className="px-3 py-4 border-b border-slate-200 flex items-center justify-between gap-2">
         <div className="flex items-center gap-3 min-w-0">
-          <BrandMark size={36} className="shrink-0 text-sm" />
-          {!collapsed && (
-            <div className="min-w-0">
-              <div className="font-semibold text-slate-900 text-sm leading-tight truncate">RJ House</div>
-              <div className="text-xs text-slate-500 truncate">CMS Studio</div>
-            </div>
+          {collapsed ? (
+            // The wide wordmark is illegible in the 64px rail, so it falls back
+            // to the RJ monogram there.
+            <BrandMark size={36} className="shrink-0 text-sm" />
+          ) : (
+            <BrandMark variant="wordmark" width={132} className="shrink-0" />
           )}
         </div>
         <button
