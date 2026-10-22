@@ -18,7 +18,16 @@ export default function LoginPage() {
 
 function LoginForm() {
   const search = useSearchParams()
-  const redirect = search.get('redirect') || '/dashboard'
+  // Only honour same-origin paths: `?redirect=` is attacker-controllable, and
+  // window.location.href accepts absolute URLs — without this check
+  // /login?redirect=https://evil.com would bounce a fresh admin session to a
+  // phishing site. Require a single leading slash and reject protocol-relative
+  // "//host" and backslash variants.
+  const rawRedirect = search.get('redirect') || '/dashboard'
+  const redirect =
+    rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') && !rawRedirect.startsWith('/\\')
+      ? rawRedirect
+      : '/dashboard'
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
