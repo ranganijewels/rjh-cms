@@ -44,3 +44,36 @@ export async function getMe(): Promise<CmsUser | null> {
     return null
   }
 }
+
+// Read the identity out of the access token already sitting in the cookie —
+// no network call, so the shell can show who is signed in without adding a
+// request (or a 401) to every page load. Returns null when the token is
+// missing, malformed or not a JWT; callers should hide the identity block.
+export function currentUserFromToken(): { email?: string; name?: string; role?: string } | null {
+  if (typeof document === 'undefined') return null
+  const match = document.cookie.match(/(^|; )cms_access_token=([^;]+)/)
+  if (!match) return null
+  try {
+    const payload = match[2].split('.')[1]
+    if (!payload) return null
+    const b64 = payload.replace(/-/g, '+').replace(/_/g, '/')
+    // atob only handles Latin-1; percent-encode each byte so multi-byte
+    // UTF-8 (names) survives JSON.parse.
+    const json = decodeURIComponent(
+      Array.from(atob(b64), (c) => '%' + c.charCodeAt(0).toString(16).padStart(2, '0')).join(''),
+    )
+    const claims = JSON.parse(json)
+    if (!claims || typeof claims !== 'object') return null
+    return {
+      email: typeof claims.email === 'string' ? claims.email : undefined,
+      name:
+        (typeof claims.fullName === 'string' && claims.fullName) ||
+        (typeof claims.name === 'string' && claims.name) ||
+        (typeof claims.username === 'string' && claims.username) ||
+        undefined,
+      role: typeof claims.role === 'string' ? claims.role : undefined,
+    }
+  } catch {
+    return null
+  }
+}
