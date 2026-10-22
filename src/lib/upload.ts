@@ -45,7 +45,7 @@ async function postUpload(file: File, prefix: string, token: string | null): Pro
  * with "Invalid or expired token".
  */
 export async function uploadMedia(file: File, prefix = 'cms'): Promise<string> {
-  let token = getAccessToken() || readCookie('cms_access_token')
+  const token = getAccessToken() || readCookie('cms_access_token')
   let res = await postUpload(file, prefix, token)
 
   if (res.status === 401) {

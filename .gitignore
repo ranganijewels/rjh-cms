@@ -6,4 +6,5 @@ node_modules
 .vercel
 
 .env
+*.bak
 tsconfig.tsbuildinfo

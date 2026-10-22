@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import PageHeader from '@/components/PageHeader'
 import api from '@/lib/api'
 
@@ -33,7 +33,6 @@ const FORMAT_ACTIONS: { label: string; wrap: [string, string] }[] = [
 
 export default function PageEditor() {
   const { slug } = useParams<{ slug: string }>()
-  const router = useRouter()
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
   const [seoTitle, setSeoTitle] = useState('')

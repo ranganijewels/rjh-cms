@@ -121,7 +121,8 @@ export default function CustomizeEditor() {
   const selectedCats: string[] = Array.isArray(guides.categories) ? guides.categories : []
   const toggleCat = (cat: string) => {
     const set = new Set(selectedCats)
-    set.has(cat) ? set.delete(cat) : set.add(cat)
+    if (set.has(cat)) set.delete(cat)
+    else set.add(cat)
     setGuides({ categories: [...set] })
   }
 
@@ -228,7 +229,7 @@ export default function CustomizeEditor() {
                   <textarea className="form-textarea min-h-[70px]" value={g.title || ''} onChange={(e) => galL.update(i, { title: e.target.value })} placeholder="Caption (e.g. Oval solitaire engagement ring in 14K yellow gold)" />
                   <label className="flex items-center gap-2 text-xs text-slate-600">
                     <input type="checkbox" checked={g.consent === true} onChange={(e) => galL.update(i, { consent: e.target.checked })} />
-                    Real Rangani project, shown with the client's permission
+                    Real Rangani project, shown with the client&apos;s permission
                   </label>
                   <button onClick={() => galL.remove(i)} aria-label="Remove gallery image" className="btn-danger !px-2 !py-1 text-xs"><Trash2 className="w-3.5 h-3.5" /> Remove</button>
                 </div>

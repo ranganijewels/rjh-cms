@@ -125,9 +125,9 @@ export default function AboutEditor() {
           section at once.
         </p>
 
-        <Explore sec={get('explore')} onChange={(c) => setContent('explore', c)} onSaved={reload} setSec={(s) => setSec('explore', s)} />
-        <Services sec={get('services')} onChange={(c) => setContent('services', c)} onSaved={reload} setSec={(s) => setSec('services', s)} />
-        <CtaBanner sec={get('cta-banner')} onChange={(c) => setContent('cta-banner', c)} onSaved={reload} setSec={(s) => setSec('cta-banner', s)} />
+        <Explore sec={get('explore')} onChange={(c: Content) => setContent('explore', c)} onSaved={reload} setSec={(s: Loaded) => setSec('explore', s)} />
+        <Services sec={get('services')} onChange={(c: Content) => setContent('services', c)} onSaved={reload} setSec={(s: Loaded) => setSec('services', s)} />
+        <CtaBanner sec={get('cta-banner')} onChange={(c: Content) => setContent('cta-banner', c)} onSaved={reload} setSec={(s: Loaded) => setSec('cta-banner', s)} />
       </div>
     </>
   )

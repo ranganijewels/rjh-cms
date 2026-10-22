@@ -12,7 +12,6 @@ const PAGE = 'product'
 const KEY = 'pdp-content'
 
 const TRUST_ICONS = ['shipping', 'diamond', 'returns', 'lock', 'warranty', 'certificate']
-const PILLAR_ICONS = ['hand', 'gem', 'heart', 'shield', 'sparkle']
 const QUICK_ICONS = ['ruler', 'calendar', 'shipping']
 
 // Editor for content shared by every Product Detail Page — trust badges, the
@@ -79,8 +78,6 @@ export default function PdpEditor() {
   const fin = content.financing || {}
   const ship: string[] = Array.isArray(content.shipping_returns) ? content.shipping_returns : []
   const care: string[] = Array.isArray(content.certification_care) ? content.certification_care : []
-  const pillars = content.brand_pillars || {}
-  const pItems: any[] = Array.isArray(pillars.items) ? pillars.items : []
   const byo = content.build_your_own || {}
   const patchByo = (p: any) => patch({ build_your_own: { ...byo, ...p } })
   const ql = content.quick_links || {}
@@ -104,7 +101,6 @@ export default function PdpEditor() {
   const wl = list(why, (n) => patch({ why_choose: n }), () => ({ image: '', service_description: '' }))
   const sl = list(ship, (n) => patch({ shipping_returns: n }), () => '')
   const cl = list(care, (n) => patch({ certification_care: n }), () => '')
-  const pl = list(pItems, (n) => patch({ brand_pillars: { ...pillars, items: n } }), () => ({ icon: 'hand', title: '', body: '' }))
   const qll = list(qlItems, (n) => patchQl({ items: n }), () => ({ icon: 'ruler', label: '', url: '' }))
   const dl = list(diffItems, (n) => patchDiff({ items: n }), () => ({ title: '', body: '' }))
   const bcl = list(bcItems, (n) => patchBc({ items: n }), () => ({ image: '', title: '', text: '', linkText: '', linkUrl: '' }))

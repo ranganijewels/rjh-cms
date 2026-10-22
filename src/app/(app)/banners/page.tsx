@@ -112,7 +112,7 @@ const HERO_PAGES = [
 function HeroEditor() {
   const [pageSlug, setPageSlug] = useState('homepage')
   const [section, setSection] = useState<Section | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState<'' | 'desktop' | 'mobile'>('')
   const [error, setError] = useState('')

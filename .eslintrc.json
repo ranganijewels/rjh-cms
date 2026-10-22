@@ -1,0 +1,9 @@
+{
+  "extends": ["next/core-web-vitals", "next/typescript"],
+  "rules": {
+    // 180 pre-existing `any`s across the legacy editors. Kept as warnings so
+    // the debt stays visible and new code gets nudged, without failing CI on
+    // a codebase-wide refactor.
+    "@typescript-eslint/no-explicit-any": "warn"
+  }
+}

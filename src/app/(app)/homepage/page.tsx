@@ -102,17 +102,17 @@ export default function HomepageEditor() {
           <a href="/banners" className="text-brand-500 underline">Banners &amp; Hero</a>.
         </p>
 
-        <FeaturedCollections sec={get('featured-collection', 'featured-collection', 'Featured Collections')} onChange={(c) => setContent('featured-collection', c)} onSaved={reload} save={saveSection} setSec={(s) => setSections((p) => ({ ...p, 'featured-collection': s }))} />
+        <FeaturedCollections sec={get('featured-collection', 'featured-collection', 'Featured Collections')} onChange={(c: SectionContent) => setContent('featured-collection', c)} onSaved={reload} save={saveSection} />
 
-        <DiamondShapes sec={get('product-variants', 'product-variants', 'Diamond Shapes')} onChange={(c) => setContent('product-variants', c)} onSaved={reload} save={saveSection} setSec={(s) => setSections((p) => ({ ...p, 'product-variants': s }))} />
+        <DiamondShapes sec={get('product-variants', 'product-variants', 'Diamond Shapes')} onChange={(c: SectionContent) => setContent('product-variants', c)} onSaved={reload} save={saveSection} setSec={(s: Loaded) => setSections((p) => ({ ...p, 'product-variants': s }))} />
 
-        <WhyChoose sec={get('why-choose', 'why-choose', 'Why Choose')} onChange={(c) => setContent('why-choose', c)} onSaved={reload} save={saveSection} setSec={(s) => setSections((p) => ({ ...p, 'why-choose': s }))} />
+        <WhyChoose sec={get('why-choose', 'why-choose', 'Why Choose')} onChange={(c: SectionContent) => setContent('why-choose', c)} onSaved={reload} save={saveSection} setSec={(s: Loaded) => setSections((p) => ({ ...p, 'why-choose': s }))} />
 
-        <DiscoverStylesEditor sec={get('discover-styles', 'discover-styles', 'Discover Styles')} onChange={(c) => setContent('discover-styles', c)} onSaved={reload} save={saveSection} setSec={(s) => setSections((p) => ({ ...p, 'discover-styles': s }))} />
+        <DiscoverStylesEditor sec={get('discover-styles', 'discover-styles', 'Discover Styles')} onChange={(c: SectionContent) => setContent('discover-styles', c)} onSaved={reload} save={saveSection} setSec={(s: Loaded) => setSections((p) => ({ ...p, 'discover-styles': s }))} />
 
-        <PromoBanner sec={get('promo-banner', 'banner', 'Promo Banner')} onChange={(c) => setContent('promo-banner', c)} onSaved={reload} save={saveSection} setSec={(s) => setSections((p) => ({ ...p, 'promo-banner': s }))} />
+        <PromoBanner sec={get('promo-banner', 'banner', 'Promo Banner')} onChange={(c: SectionContent) => setContent('promo-banner', c)} onSaved={reload} save={saveSection} setSec={(s: Loaded) => setSections((p) => ({ ...p, 'promo-banner': s }))} />
 
-        <Reviews sec={get('customer-reviews', 'testimonials', 'Customer Reviews')} onChange={(c) => setContent('customer-reviews', c)} onSaved={reload} save={saveSection} setSec={(s) => setSections((p) => ({ ...p, 'customer-reviews': s }))} />
+        <Reviews sec={get('customer-reviews', 'testimonials', 'Customer Reviews')} onChange={(c: SectionContent) => setContent('customer-reviews', c)} onSaved={reload} save={saveSection} setSec={(s: Loaded) => setSections((p) => ({ ...p, 'customer-reviews': s }))} />
       </div>
     </>
   )
@@ -191,7 +191,7 @@ function useList<T>(items: T[], setItems: (next: T[]) => void, blank: () => T) {
 
 // ─── Featured Collections ────────────────────────────────────────────────────
 
-function FeaturedCollections({ sec, onChange, save, onSaved, setSec }: any) {
+function FeaturedCollections({ sec, onChange, save, onSaved }: any) {
   const c = sec.content
   const banners: any[] = Array.isArray(c.banners) ? c.banners : []
   const list = useList(banners, (next) => onChange({ ...c, banners: next }), () => ({ text: '', link: '/product', imageUrl: '' }))

@@ -56,7 +56,7 @@ export default function ThemePage() {
     try {
       await api.put('/cms/theme', theme).catch(() => api.patch('/settings/theme', theme))
       setMessage('Saved')
-    } catch (e: any) {
+    } catch {
       setMessage('Saved locally — backend /cms/theme endpoint not yet implemented')
     } finally {
       setSaving(false)
