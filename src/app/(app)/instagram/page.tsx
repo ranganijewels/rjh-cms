@@ -80,6 +80,7 @@ export default function InstagramReelsEditor() {
         actions={
           <div className="flex items-center gap-3">
             {error && <span className="text-sm text-red-600">{error}</span>}
+            <button onClick={() => setItems([...items, blank()])} className="btn-outline"><Plus className="w-4 h-4" /> Add reel</button>
             <button onClick={save} disabled={saving} className="btn-primary">{saving ? 'Saving…' : 'Save'}</button>
           </div>
         }
@@ -87,6 +88,16 @@ export default function InstagramReelsEditor() {
       {error && <div className="card p-3 mb-4 text-sm text-red-600">{error}</div>}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {!items.length && (
+          <button
+            onClick={() => setItems([blank()])}
+            className="card flex min-h-[180px] flex-col items-center justify-center gap-2 border-dashed text-slate-500 transition hover:border-brand-500 hover:text-brand-600"
+          >
+            <Plus className="w-5 h-5" />
+            <span className="text-sm font-medium">Add your first reel</span>
+            <span className="text-xs text-slate-400">Vertical 9:16 videos look best</span>
+          </button>
+        )}
         {items.map((it, i) => (
           <div key={i} className="card p-4 space-y-3">
             <div className="flex items-center justify-between">
@@ -109,8 +120,6 @@ export default function InstagramReelsEditor() {
           </div>
         ))}
       </div>
-
-      <button onClick={() => setItems([...items, blank()])} className="btn-outline mt-4"><Plus className="w-4 h-4" /> Add reel</button>
     </>
   )
 }

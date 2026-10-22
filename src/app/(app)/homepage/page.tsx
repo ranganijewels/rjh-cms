@@ -373,23 +373,39 @@ function Reviews({ sec, onChange, save, onSaved }: any) {
       <div className="grid md:grid-cols-2 gap-4">
         {reviews.map((r, i) => (
           <CardEditor key={i} index={i} count={reviews.length} onRemove={() => list.remove(i)} onMove={(d) => list.move(i, d)}>
-            <div className="flex gap-3">
-              <div className="w-24 shrink-0">
-                <MediaField value={r.imageUrl || ''} onChange={(url) => list.update(i, { imageUrl: url })} prefix="home/reviews" aspect="aspect-square" />
+            <div className="space-y-3">
+              <div className="flex gap-3">
+                <div className="w-28 shrink-0">
+                  <MediaField value={r.imageUrl || ''} onChange={(url) => list.update(i, { imageUrl: url })} prefix="home/reviews" aspect="aspect-square" />
+                </div>
+                <div className="flex-1 space-y-2.5">
+                  <div>
+                    <label className="form-label">Customer name</label>
+                    <input className="form-input" value={r.text || ''} onChange={(e) => list.update(i, { text: e.target.value })} placeholder="e.g. Priya Sharma" />
+                  </div>
+                  <div>
+                    <label className="form-label">Rating</label>
+                    <select className="form-input w-28" value={r.rating ?? 5} onChange={(e) => list.update(i, { rating: Number(e.target.value) })}>
+                      {[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{n} ★</option>)}
+                    </select>
+                  </div>
+                </div>
               </div>
-              <div className="flex-1 space-y-2">
-                <input className="form-input" value={r.text || ''} onChange={(e) => list.update(i, { text: e.target.value })} placeholder="Customer name" />
-                <select className="form-input" value={r.rating ?? 5} onChange={(e) => list.update(i, { rating: Number(e.target.value) })}>
-                  {[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{n} ★</option>)}
-                </select>
-                <textarea className="form-textarea min-h-[60px]" value={r.description || ''} onChange={(e) => list.update(i, { description: e.target.value })} placeholder="Review text" />
-                <input className="form-input" value={r.source || ''} onChange={(e) => list.update(i, { source: e.target.value })} placeholder="Source / evidence (e.g. Google review link, order #, email date)" />
+              <div>
+                <label className="form-label">Review</label>
+                <textarea className="form-textarea min-h-[72px] resize-y" value={r.description || ''} onChange={(e) => list.update(i, { description: e.target.value })} placeholder="What the customer said…" />
+              </div>
+              <div>
+                <label className="form-label">Source / evidence</label>
+                <input className="form-input" value={r.source || ''} onChange={(e) => list.update(i, { source: e.target.value })} placeholder="Google review link, order #, or email date" />
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3">
                 <label className="flex items-center gap-2 text-xs text-slate-600">
-                  <input type="checkbox" checked={r.consent === true} onChange={(e) => list.update(i, { consent: e.target.checked })} />
+                  <input type="checkbox" className="accent-brand-navy" checked={r.consent === true} onChange={(e) => list.update(i, { consent: e.target.checked })} />
                   Customer gave permission to publish this quote and name
                 </label>
                 {!(r.consent === true && String(r.source || '').trim()) && (
-                  <p className="text-xs text-amber-700">No source or permission recorded for this testimonial yet.</p>
+                  <span className="text-xs text-amber-700">Source or permission still needed</span>
                 )}
               </div>
             </div>

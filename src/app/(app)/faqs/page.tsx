@@ -102,30 +102,31 @@ export default function FaqsPage() {
         }
       />
 
-      <div className="card p-5 mb-4">
-        <h3 className="font-semibold text-sm">Show on product pages</h3>
-        <p className="text-xs text-slate-500 mt-1 mb-3">Tick the categories whose FAQs appear in the FAQ section of every product page. The full list always appears on the FAQs page, grouped by category.</p>
-        <div className="flex flex-wrap gap-x-5 gap-y-2">
+      <div className="card p-5 mb-5">
+        <h3 className="text-sm font-semibold text-slate-900">Show on product pages</h3>
+        <p className="text-xs text-slate-500 mt-1">Tick the categories whose FAQs appear in the FAQ section of every product page. The full list always appears on the FAQs page, grouped by category.</p>
+        <div className="mt-4 grid grid-cols-1 gap-x-6 gap-y-0.5 sm:grid-cols-2 xl:grid-cols-3">
           {categories.map((c) => (
-            <label key={c} className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={pdpCats.some((x) => x.toLowerCase() === c.toLowerCase())}
+            <label key={c} className="-mx-2 flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-slate-700 transition hover:bg-slate-50">
+              <input type="checkbox" className="accent-brand-navy" checked={pdpCats.some((x) => x.toLowerCase() === c.toLowerCase())}
                 onChange={(e) => setPdpCats(e.target.checked ? [...pdpCats, c] : pdpCats.filter((x) => x.toLowerCase() !== c.toLowerCase()))} />
-              {c} <span className="text-slate-400">({countOf(c)})</span>
+              <span className="truncate" title={c}>{c}</span>
+              <span className="ml-auto shrink-0 text-xs tabular-nums text-slate-400">{countOf(c)}</span>
             </label>
           ))}
           {!categories.length && <span className="text-sm text-slate-500">Add FAQs with a category first.</span>}
         </div>
-        <div className="mt-3 flex items-center gap-3">
+        <div className="mt-4 flex items-center gap-3 border-t border-slate-100 pt-4">
           <button onClick={saveSettings} className="btn-primary">Save</button>
           {settingsError && <span className="text-sm text-red-600">{settingsError}</span>}
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2 mb-3">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
         {[{ k: '', label: `All (${rows.length})` }, ...categories.map((c) => ({ k: c, label: `${c} (${countOf(c)})` })),
           ...(rows.some((r) => !(r.category || '').trim()) ? [{ k: '__none', label: `Uncategorised (${rows.filter((r) => !(r.category || '').trim()).length})` }] : [])].map((t) => (
-          <button key={t.k} onClick={() => setFilter(t.k)}
-            className={`px-3 py-1 rounded-full text-xs border ${filter === t.k ? 'bg-slate-900 text-white border-slate-900' : 'border-slate-300 text-slate-600 hover:bg-slate-50'}`}>
+          <button key={t.k} onClick={() => setFilter(t.k)} aria-pressed={filter === t.k}
+            className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${filter === t.k ? 'border-brand-navy bg-brand-navy text-white shadow-sm' : 'border-slate-300 text-slate-600 hover:border-slate-400 hover:bg-slate-50'}`}>
             {t.label}
           </button>
         ))}
