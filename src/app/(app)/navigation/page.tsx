@@ -222,16 +222,16 @@ function NavItemModal({
       aria-labelledby="nav-modal-title"
     >
       <div className="card w-full max-w-lg">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
-          <h3 id="nav-modal-title" className="font-semibold">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+          <h3 id="nav-modal-title" className="text-base font-semibold text-slate-900">
             {editData ? 'Edit' : 'Add'} {isSubLink ? 'Sub-Link' : 'Navigation Item'}
           </h3>
-          <button onClick={onClose} aria-label="Close">
-            <X className="w-5 h-5 text-slate-400" />
+          <button onClick={onClose} aria-label="Close" className="-mr-2 p-1.5 rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition">
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="p-5 space-y-4">
+        <div className="px-6 py-5 space-y-4">
           <div>
             <label className="form-label">Label *</label>
             <input
@@ -349,7 +349,7 @@ function NavItemModal({
           {error && <p className="text-sm text-red-600">{error}</p>}
         </div>
 
-        <div className="px-5 py-4 border-t border-slate-200 flex justify-end gap-2">
+        <div className="px-6 py-4 border-t border-slate-200 flex justify-end gap-2 bg-slate-50/60 rounded-b-xl flex-shrink-0">
           <button onClick={onClose} className="btn-outline">
             Cancel
           </button>
@@ -494,7 +494,11 @@ export default function NavigationPage() {
       />
 
       {loading ? (
-        <div className="card p-6 text-sm text-slate-500">Loading…</div>
+        <div className="card p-6 animate-pulse space-y-3" aria-busy="true" aria-live="polite">
+          <div className="h-4 bg-slate-200 rounded w-1/4" />
+          <div className="h-3 bg-slate-100 rounded w-1/2" />
+          <div className="h-3 bg-slate-100 rounded w-1/3" />
+        </div>
       ) : !topLevel.length ? (
         <EmptyState
           icon={<MenuIcon className="w-6 h-6" />}

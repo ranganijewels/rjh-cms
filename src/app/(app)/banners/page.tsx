@@ -442,12 +442,15 @@ export default function BannersPage() {
       <HeroEditor />
 
       <h3 className="font-semibold text-slate-900 mb-3">Other banners</h3>
-      <div className="card p-3 mb-5 flex items-center gap-2">
+      <div className="card p-1.5 mb-5 flex items-center gap-1">
         {PAGES.map((p) => (
           <button
             key={p}
             onClick={() => setPageSlug(p)}
-            className={`px-3 py-1.5 rounded-lg text-sm ${pageSlug === p ? 'bg-brand-500 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
+            aria-pressed={pageSlug === p}
+            className={`px-3 py-1.5 rounded-md text-sm whitespace-nowrap font-medium transition ${
+              pageSlug === p ? 'bg-brand-navy text-white shadow-[0_1px_2px_rgba(11,20,36,0.2)]' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+            }`}
           >
             /{p}
           </button>
@@ -455,7 +458,11 @@ export default function BannersPage() {
       </div>
 
       {loading ? (
-        <div className="card p-6 text-sm text-slate-500">Loading…</div>
+        <div className="card p-6 animate-pulse space-y-3" aria-busy="true" aria-live="polite">
+          <div className="h-4 bg-slate-200 rounded w-1/4" />
+          <div className="h-3 bg-slate-100 rounded w-1/2" />
+          <div className="h-3 bg-slate-100 rounded w-1/3" />
+        </div>
       ) : !rows.length ? (
         <EmptyState
           icon={<ImageIcon className="w-6 h-6" />}
@@ -465,7 +472,7 @@ export default function BannersPage() {
       ) : (
         <div className="grid md:grid-cols-2 gap-4">
           {rows.map((r) => (
-            <div key={r.id} className="card overflow-hidden">
+            <div key={r.id} className="card overflow-hidden transition hover:border-brand-300 hover:shadow-[0_2px_10px_rgba(11,20,36,0.08)]">
               {(r.data?.imageUrl || r.data?.image) && (
                 <img
                   src={r.data.imageUrl || r.data.image}
@@ -530,17 +537,17 @@ function BannerModal({ banner, onClose, onChange, onSave }: {
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-2 md:p-4">
       <div className="card w-full max-w-2xl max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 flex-shrink-0">
-          <h3 className="font-semibold">{banner.id ? 'Edit banner' : 'New banner'}</h3>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 flex-shrink-0">
+          <h3 className="text-base font-semibold text-slate-900">{banner.id ? 'Edit banner' : 'New banner'}</h3>
           <button
             onClick={onClose}
             aria-label="Close"
-            className="w-10 h-10 flex items-center justify-center -mr-2"
+            className="w-9 h-9 flex items-center justify-center -mr-2 rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
           >
-            <X className="w-6 h-6 text-slate-400" />
+            <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="p-5 space-y-4 flex-1 overflow-y-auto">
+        <div className="px-6 py-5 space-y-4 flex-1 overflow-y-auto">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="form-label">Type</label>
@@ -594,7 +601,7 @@ function BannerModal({ banner, onClose, onChange, onSave }: {
             <span className="text-sm">Visible</span>
           </label>
         </div>
-        <div className="px-5 py-4 border-t border-slate-200 flex justify-end gap-2 flex-shrink-0">
+        <div className="px-6 py-4 border-t border-slate-200 flex justify-end gap-2 bg-slate-50/60 rounded-b-xl flex-shrink-0">
           <button onClick={onClose} className="btn-outline">Cancel</button>
           <button onClick={onSave} className="btn-primary">Save banner</button>
         </div>

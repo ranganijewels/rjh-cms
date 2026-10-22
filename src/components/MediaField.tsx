@@ -70,7 +70,7 @@ export default function MediaField({
         </div>
       )}
 
-      <div className={`rounded-lg border border-slate-200 bg-slate-50 overflow-hidden ${aspect} flex items-center justify-center relative`}>
+      <div className={`rounded-lg border ${value ? 'border-slate-300' : 'border-dashed border-slate-300'} bg-slate-50 overflow-hidden ${aspect} flex items-center justify-center relative`}>
         {value ? (
           isVideoUrl(value) ? (
             <video key={value} src={previewUrl(value)} muted playsInline loop autoPlay className="w-full h-full object-cover" />

@@ -104,7 +104,13 @@ export default function PageEditor() {
     } catch {}
   }
 
-  if (loading) return <div className="p-6 text-sm text-slate-500">Loading…</div>
+  if (loading) return (
+    <div className="card p-6 animate-pulse space-y-3" aria-busy="true" aria-live="polite">
+      <div className="h-4 bg-slate-200 rounded w-1/3" />
+      <div className="h-3 bg-slate-100 rounded w-1/2" />
+      <div className="h-3 bg-slate-100 rounded w-2/3" />
+    </div>
+  )
 
   return (
     <>

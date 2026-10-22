@@ -5,16 +5,24 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // The brand ramp is derived from the Rangani navy (#162640) so every
+        // existing `brand-*` utility (buttons, links, focus rings, active
+        // states) resolves to the house identity instead of Tailwind blue.
         brand: {
-          50: '#f5f7fa',
-          100: '#e9eef5',
-          500: '#2563eb',
-          600: '#1e40af',
-          700: '#1e3a8a',
-          900: '#0f1b3d',
+          50: '#f4f6fa',
+          100: '#e8edf5',
+          200: '#d3dcec',
+          300: '#aebdd6',
+          400: '#7f93b8',
+          500: '#1d3f66',
+          600: '#162640',
+          700: '#12203a',
+          800: '#0e1930',
+          900: '#0b1424',
           // House-brand tones taken from the Rangani wordmark / theme defaults.
           navy: '#162640',
           gold: '#d4af37',
+          'gold-soft': '#f8f2e0',
         },
       },
       fontFamily: {

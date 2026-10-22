@@ -64,10 +64,10 @@ export default function DashboardPage() {
   }, [])
 
   const tiles = [
-    { href: '/pages', label: 'Static Pages', icon: FileText, count: counts.pages, error: errors.pages, color: 'bg-brand-500' },
-    { href: '/blog', label: 'Blog Posts', icon: Newspaper, count: counts.blogs, error: errors.blogs, color: 'bg-brand-600' },
-    { href: '/faqs', label: 'FAQs', icon: HelpCircle, count: counts.faqs, error: errors.faqs, color: 'bg-brand-700' },
-    { href: '/sections', label: 'Page Sections', icon: LayoutTemplate, count: counts.sections, error: errors.sections, color: 'bg-brand-900' },
+    { href: '/pages', label: 'Static Pages', icon: FileText, count: counts.pages, error: errors.pages },
+    { href: '/blog', label: 'Blog Posts', icon: Newspaper, count: counts.blogs, error: errors.blogs },
+    { href: '/faqs', label: 'FAQs', icon: HelpCircle, count: counts.faqs, error: errors.faqs },
+    { href: '/sections', label: 'Page Sections', icon: LayoutTemplate, count: counts.sections, error: errors.sections },
   ]
 
   // NOTE: Blog/FAQs/Coupons pages open their create form via internal component
@@ -93,7 +93,11 @@ export default function DashboardPage() {
         {tiles.map((t) => {
           const Icon = t.icon
           return (
-            <Link href={t.href} key={t.href} className="card p-5 hover:shadow-md transition group relative">
+            <Link
+              href={t.href}
+              key={t.href}
+              className="card p-5 hover:border-brand-300 hover:shadow-[0_2px_10px_rgba(11,20,36,0.08)] transition group relative"
+            >
               {t.error && (
                 <span
                   className="absolute top-3 right-3 text-amber-600"
@@ -103,18 +107,22 @@ export default function DashboardPage() {
                   <AlertTriangle className="w-4 h-4" />
                 </span>
               )}
-              <div className={`w-10 h-10 rounded-lg ${t.color} text-white flex items-center justify-center mb-3`}>
+              <div className="w-10 h-10 rounded-lg bg-brand-navy/10 text-brand-navy flex items-center justify-center mb-3">
                 <Icon className="w-5 h-5" />
               </div>
               {loading ? (
-                <div className="h-8 w-12 rounded animate-pulse bg-slate-200" aria-live="polite" aria-label="Loading count" />
+                <div className="h-9 w-12 rounded animate-pulse bg-slate-200" aria-live="polite" aria-label="Loading count" />
               ) : t.error ? (
-                <div className="text-2xl font-bold text-slate-400">—</div>
+                <div className="text-3xl font-semibold text-slate-400">—</div>
               ) : (
-                <div className="text-2xl font-bold text-slate-900">{t.count}</div>
+                <div className="text-3xl font-semibold tracking-tight text-slate-900">{t.count}</div>
               )}
-              <div className="text-sm text-slate-500 mt-0.5 group-hover:text-slate-800 transition">
+              <div className="text-sm text-slate-500 mt-1 group-hover:text-slate-800 transition flex items-center gap-1.5">
                 {t.label}
+                <span
+                  aria-hidden="true"
+                  className="h-px w-4 bg-brand-gold opacity-0 group-hover:opacity-100 transition"
+                />
               </div>
             </Link>
           )

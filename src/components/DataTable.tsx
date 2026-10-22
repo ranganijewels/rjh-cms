@@ -39,12 +39,18 @@ export default function DataTable<T extends { id?: string; slug?: string }>({
   }
   if (loading) {
     return (
-      <div className="card overflow-hidden">
-        <div className="animate-pulse p-6 space-y-3">
-          <div className="h-4 bg-slate-200 rounded w-1/3" />
-          <div className="h-4 bg-slate-100 rounded" />
-          <div className="h-4 bg-slate-100 rounded" />
-          <div className="h-4 bg-slate-100 rounded" />
+      <div className="card overflow-hidden" aria-busy="true" aria-live="polite">
+        {/* Header row mirroring .table-base's tinted thead. */}
+        <div className="h-11 bg-slate-50/70 border-b border-slate-200" />
+        <div className="divide-y divide-slate-100">
+          {[70, 45, 60, 35, 52].map((w, i) => (
+            <div key={i} className="px-4 py-3.5">
+              <div
+                className="h-3.5 bg-slate-200/80 rounded animate-pulse"
+                style={{ width: `${w}%` }}
+              />
+            </div>
+          ))}
         </div>
       </div>
     )

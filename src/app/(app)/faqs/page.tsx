@@ -169,11 +169,11 @@ export default function FaqsPage() {
       {editing && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="card w-full max-w-2xl" role="dialog" aria-modal="true" aria-labelledby="faq-modal-title">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
-              <h3 id="faq-modal-title" className="font-semibold">{editing.id ? 'Edit FAQ' : 'New FAQ'}</h3>
-              <button onClick={() => setEditing(null)} aria-label="Close"><X className="w-5 h-5 text-slate-400" /></button>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+              <h3 id="faq-modal-title" className="text-base font-semibold text-slate-900">{editing.id ? 'Edit FAQ' : 'New FAQ'}</h3>
+              <button onClick={() => setEditing(null)} aria-label="Close" className="-mr-2 p-1.5 rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"><X className="w-5 h-5" /></button>
             </div>
-            <div className="p-5 space-y-4">
+            <div className="px-6 py-5 space-y-4">
               <div>
                 <label className="form-label">Question</label>
                 <input ref={firstFieldRef} className="form-input" value={editing.question} onChange={(e) => setEditing({ ...editing, question: e.target.value })} />
@@ -207,7 +207,7 @@ export default function FaqsPage() {
                 </div>
               </div>
             </div>
-            <div className="px-5 py-4 border-t border-slate-200 flex justify-end gap-2">
+            <div className="px-6 py-4 border-t border-slate-200 flex justify-end gap-2 bg-slate-50/60 rounded-b-xl">
               <button onClick={() => setEditing(null)} className="btn-outline">Cancel</button>
               <button onClick={save} className="btn-primary">Save FAQ</button>
             </div>

@@ -65,7 +65,7 @@ export default function BlogIndex() {
         columns={[
           { key: 'title', header: 'Title', cell: (r) => <span className="font-medium text-slate-900">{r.title}</span> },
           { key: 'slug', header: 'Slug', cell: (r) => <code className="text-xs text-slate-500">{r.slug}</code> },
-          { key: 'tag', header: 'Tags', cell: (r) => r.tags?.length ? <span className="badge bg-blue-50 text-blue-700">{r.tags.join(', ')}</span> : <span className="text-slate-400">—</span> },
+          { key: 'tag', header: 'Tags', cell: (r) => r.tags?.length ? <span className="badge bg-brand-50 text-brand-navy">{r.tags.join(', ')}</span> : <span className="text-slate-400">—</span> },
           { key: 'status', header: 'Status', cell: (r) => <StatusBadge status={r.isPublished ? 'published' : 'draft'} /> },
         ]}
         empty={

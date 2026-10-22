@@ -116,15 +116,16 @@ export default function SectionsPage() {
         }
       />
 
-      <div className="card p-3 mb-5 flex items-center gap-2 overflow-x-auto">
+      <div className="card p-1.5 mb-5 flex items-center gap-1 overflow-x-auto">
         {PAGES.map((p) => (
           <button
             key={p}
             onClick={() => setPageSlug(p)}
-            className={`px-3 py-1.5 rounded-lg text-sm whitespace-nowrap ${
+            aria-pressed={pageSlug === p}
+            className={`px-3 py-1.5 rounded-md text-sm whitespace-nowrap font-medium transition ${
               pageSlug === p
-                ? 'bg-brand-500 text-white'
-                : 'text-slate-600 hover:bg-slate-100'
+                ? 'bg-brand-navy text-white shadow-[0_1px_2px_rgba(11,20,36,0.2)]'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
             /{p}
@@ -237,11 +238,11 @@ function SectionModal({ section, onClose, onSave, onChange }: {
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
       <div className="card w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
-          <h3 className="font-semibold">{section.id ? 'Edit section' : 'New section'}</h3>
-          <button onClick={onClose}><X className="w-5 h-5 text-slate-400" /></button>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+          <h3 className="text-base font-semibold text-slate-900">{section.id ? 'Edit section' : 'New section'}</h3>
+          <button onClick={onClose} aria-label="Close" className="-mr-2 p-1.5 rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"><X className="w-5 h-5" /></button>
         </div>
-        <div className="p-5 space-y-4">
+        <div className="px-6 py-5 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="form-label">Type</label>
@@ -322,7 +323,7 @@ function SectionModal({ section, onClose, onSave, onChange }: {
             <span className="text-sm">Visible on storefront</span>
           </label>
         </div>
-        <div className="px-5 py-4 border-t border-slate-200 flex justify-end gap-2">
+        <div className="px-6 py-4 border-t border-slate-200 flex justify-end gap-2 bg-slate-50/60 rounded-b-xl flex-shrink-0">
           <button onClick={onClose} className="btn-outline">Cancel</button>
           <button
             onClick={onSave}

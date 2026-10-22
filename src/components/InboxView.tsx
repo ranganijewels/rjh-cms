@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import api from '@/lib/api'
-import { Inbox, Loader, X } from 'lucide-react'
+import { Inbox, X } from 'lucide-react'
 import EmptyState from './EmptyState'
 import PageHeader from './PageHeader'
 
@@ -101,8 +101,13 @@ export default function InboxView({ title, description, endpoint, fields, primar
       )}
 
       {loading ? (
-        <div className="card p-6 text-sm text-slate-600 flex items-center gap-2">
-          <Loader className="w-4 h-4 animate-spin" /> Loading submissions…
+        <div className="card divide-y divide-slate-100" aria-busy="true" aria-live="polite">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="px-5 py-4 animate-pulse">
+              <div className="h-3.5 bg-slate-200/80 rounded w-1/3" />
+              <div className="h-3 bg-slate-100 rounded w-1/2 mt-2" />
+            </div>
+          ))}
         </div>
       ) : !rows.length ? (
         <EmptyState
@@ -118,7 +123,7 @@ export default function InboxView({ title, description, endpoint, fields, primar
               onClick={() => setOpen(row)}
               aria-current={open?.id === row.id ? 'true' : undefined}
               className={`w-full text-left px-5 py-4 hover:bg-slate-50 flex items-start gap-4 ${
-                open && row.id === open?.id ? 'bg-blue-50 border-l-4 border-brand-500' : ''
+                open && row.id === open?.id ? 'bg-brand-50 border-l-4 border-brand-navy' : ''
               }`}
             >
               <div className="flex-1 min-w-0">
@@ -150,13 +155,13 @@ export default function InboxView({ title, description, endpoint, fields, primar
             aria-labelledby="submission-title"
             className="card w-full max-w-sm sm:max-w-xl max-h-[90vh] overflow-y-auto"
           >
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
-              <h3 id="submission-title" className="font-semibold text-base">{open[primaryField] || 'Submission'}</h3>
-              <button onClick={() => setOpen(null)} aria-label="Close">
-                <X className="w-5 h-5 text-slate-600" />
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+              <h3 id="submission-title" className="text-base font-semibold text-slate-900">{open[primaryField] || 'Submission'}</h3>
+              <button onClick={() => setOpen(null)} aria-label="Close" className="-mr-2 p-1.5 rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition">
+                <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="px-5 pt-4 flex items-center gap-2">
+            <div className="px-6 pt-4 flex items-center gap-2">
               <label htmlFor="submission-status" className="text-xs text-slate-600">Status</label>
               <select
                 id="submission-status"
@@ -171,7 +176,7 @@ export default function InboxView({ title, description, endpoint, fields, primar
               </select>
               {open.isTest && <span className="badge bg-amber-50 text-amber-700">looks like a test</span>}
             </div>
-            <dl className="p-5 space-y-3">
+            <dl className="px-6 py-4 space-y-3">
               {fields.map((f) => (
                 <div key={f.key}>
                   <dt className="text-xs text-slate-600 mb-0.5">{f.label}</dt>

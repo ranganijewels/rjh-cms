@@ -213,7 +213,11 @@ export default function MegaMenuPage() {
       />
 
       {loading ? (
-        <div className="card p-6 text-sm text-slate-500">Loading…</div>
+        <div className="card p-6 animate-pulse space-y-3" aria-busy="true" aria-live="polite">
+          <div className="h-4 bg-slate-200 rounded w-1/4" />
+          <div className="h-3 bg-slate-100 rounded w-1/2" />
+          <div className="h-3 bg-slate-100 rounded w-1/3" />
+        </div>
       ) : navMenuItems.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 p-8 text-center">
           <LayoutGrid className="w-6 h-6 text-slate-400 mx-auto mb-2" />

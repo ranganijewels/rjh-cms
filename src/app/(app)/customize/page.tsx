@@ -85,7 +85,13 @@ export default function CustomizeEditor() {
   }
 
   if (loading || !content)
-    return <div className="card p-6 text-sm text-slate-500">Loading customize page…</div>
+    return (
+      <div className="card p-6 animate-pulse space-y-3" aria-busy="true" aria-live="polite">
+        <div className="h-4 bg-slate-200 rounded w-1/4" />
+        <div className="h-3 bg-slate-100 rounded w-1/2" />
+        <div className="h-3 bg-slate-100 rounded w-1/3" />
+      </div>
+    )
 
   // ── nested accessors (content is stored in the storefront's nested shape) ──
   const cp = content.cms_page || {}
@@ -338,8 +344,8 @@ export default function CustomizeEditor() {
 function Card({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
   return (
     <div className="card overflow-hidden">
-      <div className="px-5 py-4 border-b border-slate-200">
-        <h3 className="font-semibold text-slate-900">{title}</h3>
+      <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/60">
+        <h3 className="text-[15px] font-semibold text-slate-900">{title}</h3>
         <p className="text-xs text-slate-500 mt-0.5">{description}</p>
       </div>
       <div className="p-5">{children}</div>

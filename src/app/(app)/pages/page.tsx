@@ -145,11 +145,11 @@ export default function PagesIndex() {
       {creating && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="new-page-modal-title">
           <div className="card w-full max-w-lg">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
-              <h3 id="new-page-modal-title" className="font-semibold">New page</h3>
-              <button onClick={() => setCreating(false)} aria-label="Close"><X className="w-5 h-5 text-slate-400" /></button>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+              <h3 id="new-page-modal-title" className="text-base font-semibold text-slate-900">New page</h3>
+              <button onClick={() => setCreating(false)} aria-label="Close" className="-mr-2 p-1.5 rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"><X className="w-5 h-5" /></button>
             </div>
-            <div className="p-5 space-y-4">
+            <div className="px-6 py-5 space-y-4">
               <div>
                 <label htmlFor="new-page-slug" className="form-label">Slug</label>
                 <input
@@ -170,7 +170,7 @@ export default function PagesIndex() {
                 {slugError && <p className="text-xs text-red-600 mt-1">{slugError}</p>}
               </div>
             </div>
-            <div className="px-5 py-4 border-t border-slate-200 flex justify-end gap-2">
+            <div className="px-6 py-4 border-t border-slate-200 flex justify-end gap-2 bg-slate-50/60 rounded-b-xl">
               <button onClick={() => setCreating(false)} className="btn-outline">Cancel</button>
               <button onClick={confirmCreate} className="btn-primary">Create page</button>
             </div>
