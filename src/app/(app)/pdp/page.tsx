@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import PageHeader from '@/components/PageHeader'
 import MediaField from '@/components/MediaField'
+import { useToast } from '@/components/Toast'
 import api from '@/lib/api'
 import { Plus, Trash2 } from 'lucide-react'
 
@@ -23,8 +24,8 @@ export default function PdpEditor() {
   const [secId, setSecId] = useState<string | undefined>()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
+  const { toast } = useToast()
 
   useEffect(() => {
     ;(async () => {
@@ -56,8 +57,7 @@ export default function PdpEditor() {
       const res = secId ? await api.put(`/cms/sections/${secId}`, body) : await api.post('/cms/sections', body)
       const newId = res.data?.data?.id || res.data?.id
       if (newId) setSecId(newId)
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2500)
+      toast.success('Saved & published to the storefront')
     } catch (e: any) {
       setError(e?.response?.data?.message || e?.message || 'Save failed')
     } finally {
@@ -116,7 +116,6 @@ export default function PdpEditor() {
         description="Trust badges, why-choose features, financing line, shipping/care accordions and brand pillars — shown on every product page."
         actions={
           <div className="flex items-center gap-3">
-            {saved && <span className="text-xs text-emerald-600">Saved ✓</span>}
             {error && <span className="text-xs text-red-600">{error}</span>}
             <button onClick={save} disabled={saving} className="btn-primary">
               {saving ? 'Saving…' : 'Save & Publish'}

@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react'
 import PageHeader from '@/components/PageHeader'
 import DataTable from '@/components/DataTable'
 import EmptyState from '@/components/EmptyState'
+import Dialog from '@/components/Dialog'
+import { useToast } from '@/components/Toast'
 import api from '@/lib/api'
-import { Tag, Plus, X } from 'lucide-react'
+import { Tag, Plus } from 'lucide-react'
 
 interface Coupon {
   id?: string
@@ -27,6 +29,7 @@ export default function CouponsPage() {
   const [setupNeeded, setSetupNeeded] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const { toast } = useToast()
 
   async function reload() {
     setLoading(true)
@@ -54,6 +57,7 @@ export default function CouponsPage() {
         await api.post('/coupons', editing)
       }
       setEditing(null)
+      toast.success('Coupon saved')
       reload()
     } catch (e: any) {
       console.error('Failed to save coupon:', e)
@@ -113,13 +117,19 @@ export default function CouponsPage() {
       />
 
       {editing && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-label={editing.id ? 'Edit coupon' : 'New coupon'}>
-          <div className="card w-full max-w-lg">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-              <h3 className="text-base font-semibold text-slate-900">{editing.id ? 'Edit coupon' : 'New coupon'}</h3>
-              <button onClick={() => setEditing(null)} aria-label="Close coupon editor" disabled={saving} className="-mr-2 p-1.5 rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition disabled:opacity-50"><X className="w-5 h-5" /></button>
-            </div>
-            <div className="px-6 py-5 space-y-4">
+        <Dialog
+          onClose={() => setEditing(null)}
+          title={editing.id ? 'Edit coupon' : 'New coupon'}
+          busy={saving}
+          confirmOnDirty
+          footer={
+            <>
+              <button onClick={() => setEditing(null)} className="btn-outline" disabled={saving}>Cancel</button>
+              <button onClick={save} className="btn-primary" disabled={saving}>{saving ? 'Saving...' : 'Save coupon'}</button>
+            </>
+          }
+        >
+            <div className="space-y-4">
               {saveError && (
                 <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
                   {saveError}
@@ -166,12 +176,7 @@ export default function CouponsPage() {
                 <span className="text-sm">Active</span>
               </label>
             </div>
-            <div className="px-6 py-4 border-t border-slate-200 flex justify-end gap-2 bg-slate-50/60 rounded-b-xl">
-              <button onClick={() => setEditing(null)} className="btn-outline" disabled={saving}>Cancel</button>
-              <button onClick={save} className="btn-primary" disabled={saving}>{saving ? 'Saving...' : 'Save coupon'}</button>
-            </div>
-          </div>
-        </div>
+        </Dialog>
       )}
     </>
   )

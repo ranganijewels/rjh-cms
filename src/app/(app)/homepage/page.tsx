@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import PageHeader from '@/components/PageHeader'
 import MediaField from '@/components/MediaField'
 import IconPicker from '@/components/IconPicker'
+import { useToast } from '@/components/Toast'
 import api from '@/lib/api'
 import { Plus, Trash2, GripVertical } from 'lucide-react'
 
@@ -135,16 +136,15 @@ function SectionCard({
   children: React.ReactNode
 }) {
   const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
+  const { toast } = useToast()
 
   async function doSave() {
     setSaving(true)
     setError('')
     try {
       await save(sec)
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
+      toast.success('Saved & published to the storefront')
       onSaved()
     } catch (e: any) {
       setError(e?.response?.data?.message || e?.message || 'Save failed')
@@ -161,7 +161,6 @@ function SectionCard({
           <p className="text-xs text-slate-500 mt-0.5">{description}</p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
-          {saved && <span className="text-xs text-emerald-600">Saved ✓</span>}
           {error && <span className="text-xs text-red-600">{error}</span>}
           <button onClick={doSave} disabled={saving} className="btn-primary">
             {saving ? 'Saving…' : 'Save & Publish'}

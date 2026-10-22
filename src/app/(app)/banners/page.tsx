@@ -3,8 +3,10 @@
 import { useEffect, useRef, useState } from 'react'
 import PageHeader from '@/components/PageHeader'
 import EmptyState from '@/components/EmptyState'
+import Dialog from '@/components/Dialog'
+import { useToast } from '@/components/Toast'
 import api, { getAccessToken } from '@/lib/api'
-import { Image as ImageIcon, Film, Plus, UploadCloud, X, Trash2 } from 'lucide-react'
+import { Image as ImageIcon, Film, Plus, UploadCloud, Trash2 } from 'lucide-react'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'
 const TENANT_ID = process.env.NEXT_PUBLIC_TENANT_ID || '00000000-0000-0000-0000-000000000001'
@@ -113,10 +115,10 @@ function HeroEditor() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState<'' | 'desktop' | 'mobile'>('')
-  const [savedAt, setSavedAt] = useState<number | null>(null)
   const [error, setError] = useState('')
   const desktopInput = useRef<HTMLInputElement>(null)
   const mobileInput = useRef<HTMLInputElement>(null)
+  const { toast } = useToast()
 
   const d = section?.data || {}
   const setData = (k: string, v: any) =>
@@ -159,7 +161,7 @@ function HeroEditor() {
       } else {
         await api.post('/cms/sections', toApi(section, pageSlug))
       }
-      setSavedAt(Date.now())
+      toast.success('Hero saved & published')
       load()
     } catch (e: any) {
       setError(e?.response?.data?.message || e?.message || 'Save failed')
@@ -213,7 +215,6 @@ function HeroEditor() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          {savedAt && <span className="text-xs text-emerald-600">Saved ✓</span>}
           <button onClick={save} disabled={saving} className="btn-primary">
             {saving ? 'Saving…' : 'Save & Publish'}
           </button>
@@ -390,6 +391,7 @@ export default function BannersPage() {
   const [rows, setRows] = useState<Section[]>([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState<Section | null>(null)
+  const { toast } = useToast()
 
   async function reload() {
     setLoading(true)
@@ -408,20 +410,30 @@ export default function BannersPage() {
 
   async function save() {
     if (!editing) return
-    if (editing.id) {
-      await api.put(`/cms/sections/${editing.id}`, toApi(editing, pageSlug))
-    } else {
-      await api.post('/cms/sections', toApi(editing, pageSlug))
+    try {
+      if (editing.id) {
+        await api.put(`/cms/sections/${editing.id}`, toApi(editing, pageSlug))
+      } else {
+        await api.post('/cms/sections', toApi(editing, pageSlug))
+      }
+      setEditing(null)
+      toast.success('Banner saved')
+      reload()
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || e?.message || 'Failed to save banner')
     }
-    setEditing(null)
-    reload()
   }
 
   async function remove(s: Section) {
     if (!s.id) return
     if (!confirm(`Delete banner "${s.title || s.type}"?`)) return
-    await api.delete(`/cms/sections/${s.id}`)
-    reload()
+    try {
+      await api.delete(`/cms/sections/${s.id}`)
+      toast.success('Banner deleted')
+      reload()
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || e?.message || 'Failed to delete banner')
+    }
   }
 
   return (
@@ -520,6 +532,7 @@ function BannerModal({ banner, onClose, onChange, onSave }: {
   const setData = (k: string, v: any) => onChange({ ...banner, data: { ...d, [k]: v } })
   const [uploading, setUploading] = useState(false)
   const fileInput = useRef<HTMLInputElement>(null)
+  const { toast } = useToast()
 
   async function handleUpload(file: File | undefined) {
     if (!file) return
@@ -528,26 +541,27 @@ function BannerModal({ banner, onClose, onChange, onSave }: {
       const url = await uploadMedia(file)
       setData(file.type.startsWith('video/') ? 'videoUrl' : 'imageUrl', url)
     } catch (e: any) {
-      alert(e?.message || 'Upload failed')
+      toast.error(e?.message || 'Upload failed')
     } finally {
       setUploading(false)
     }
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-2 md:p-4">
-      <div className="card w-full max-w-2xl max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 flex-shrink-0">
-          <h3 className="text-base font-semibold text-slate-900">{banner.id ? 'Edit banner' : 'New banner'}</h3>
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="w-9 h-9 flex items-center justify-center -mr-2 rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        <div className="px-6 py-5 space-y-4 flex-1 overflow-y-auto">
+    <Dialog
+      onClose={onClose}
+      title={banner.id ? 'Edit banner' : 'New banner'}
+      maxWidth="max-w-2xl"
+      bodyClassName=""
+      confirmOnDirty
+      footer={
+        <>
+          <button onClick={onClose} className="btn-outline">Cancel</button>
+          <button onClick={onSave} className="btn-primary">Save banner</button>
+        </>
+      }
+    >
+        <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="form-label">Type</label>
@@ -601,11 +615,6 @@ function BannerModal({ banner, onClose, onChange, onSave }: {
             <span className="text-sm">Visible</span>
           </label>
         </div>
-        <div className="px-6 py-4 border-t border-slate-200 flex justify-end gap-2 bg-slate-50/60 rounded-b-xl flex-shrink-0">
-          <button onClick={onClose} className="btn-outline">Cancel</button>
-          <button onClick={onSave} className="btn-primary">Save banner</button>
-        </div>
-      </div>
-    </div>
+    </Dialog>
   )
 }

@@ -1,11 +1,13 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import PageHeader from '@/components/PageHeader'
 import DataTable from '@/components/DataTable'
 import EmptyState from '@/components/EmptyState'
+import Dialog from '@/components/Dialog'
+import { useToast } from '@/components/Toast'
 import api from '@/lib/api'
-import { HelpCircle, Plus, X } from 'lucide-react'
+import { HelpCircle, Plus } from 'lucide-react'
 
 const DEFAULT_PDP = ['BUYING & PRODUCT QUESTIONS', 'SIZING & AFTERCARE']
 
@@ -22,21 +24,12 @@ export default function FaqsPage() {
   const [rows, setRows] = useState<Faq[]>([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState<Faq | null>(null)
-  const firstFieldRef = useRef<HTMLInputElement | null>(null)
   const [filter, setFilter] = useState('')
   const [newCat, setNewCat] = useState(false)
   const [pdpCats, setPdpCats] = useState<string[]>([])
   const [settingsId, setSettingsId] = useState<string | undefined>()
-  const [settingsSaved, setSettingsSaved] = useState(false)
   const [settingsError, setSettingsError] = useState('')
-
-  useEffect(() => {
-    if (!editing) return
-    const close = (e: KeyboardEvent) => e.key === 'Escape' && setEditing(null)
-    document.addEventListener('keydown', close)
-    firstFieldRef.current?.focus()
-    return () => document.removeEventListener('keydown', close)
-  }, [editing])
+  const { toast } = useToast()
 
   async function reload() {
     setLoading(true)
@@ -73,8 +66,7 @@ export default function FaqsPage() {
       const res = settingsId ? await api.put(`/cms/sections/${settingsId}`, body) : await api.post('/cms/sections', body)
       const id = res.data?.data?.id || res.data?.id
       if (id) setSettingsId(id)
-      setSettingsSaved(true)
-      setTimeout(() => setSettingsSaved(false), 2500)
+      toast.success('FAQ settings saved')
     } catch (e: any) {
       setSettingsError(e?.response?.data?.message || e?.message || 'Save failed')
     }
@@ -125,7 +117,6 @@ export default function FaqsPage() {
         </div>
         <div className="mt-3 flex items-center gap-3">
           <button onClick={saveSettings} className="btn-primary">Save</button>
-          {settingsSaved && <span className="text-sm text-emerald-600">Saved</span>}
           {settingsError && <span className="text-sm text-red-600">{settingsError}</span>}
         </div>
       </div>
@@ -167,16 +158,23 @@ export default function FaqsPage() {
       />
 
       {editing && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="card w-full max-w-2xl" role="dialog" aria-modal="true" aria-labelledby="faq-modal-title">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-              <h3 id="faq-modal-title" className="text-base font-semibold text-slate-900">{editing.id ? 'Edit FAQ' : 'New FAQ'}</h3>
-              <button onClick={() => setEditing(null)} aria-label="Close" className="-mr-2 p-1.5 rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"><X className="w-5 h-5" /></button>
-            </div>
+        <Dialog
+          onClose={() => setEditing(null)}
+          title={editing.id ? 'Edit FAQ' : 'New FAQ'}
+          maxWidth="max-w-2xl"
+          bodyClassName=""
+          confirmOnDirty
+          footer={
+            <>
+              <button onClick={() => setEditing(null)} className="btn-outline">Cancel</button>
+              <button onClick={save} className="btn-primary">Save FAQ</button>
+            </>
+          }
+        >
             <div className="px-6 py-5 space-y-4">
               <div>
                 <label className="form-label">Question</label>
-                <input ref={firstFieldRef} className="form-input" value={editing.question} onChange={(e) => setEditing({ ...editing, question: e.target.value })} />
+                <input autoFocus className="form-input" value={editing.question} onChange={(e) => setEditing({ ...editing, question: e.target.value })} />
               </div>
               <div>
                 <label className="form-label">Answer</label>
@@ -207,12 +205,7 @@ export default function FaqsPage() {
                 </div>
               </div>
             </div>
-            <div className="px-6 py-4 border-t border-slate-200 flex justify-end gap-2 bg-slate-50/60 rounded-b-xl">
-              <button onClick={() => setEditing(null)} className="btn-outline">Cancel</button>
-              <button onClick={save} className="btn-primary">Save FAQ</button>
-            </div>
-          </div>
-        </div>
+        </Dialog>
       )}
     </>
   )

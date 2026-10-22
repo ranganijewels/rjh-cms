@@ -1,9 +1,11 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import PageHeader from '@/components/PageHeader'
 import EmptyState from '@/components/EmptyState'
+import Dialog from '@/components/Dialog'
+import { useToast } from '@/components/Toast'
 import api from '@/lib/api'
 import {
   Menu as MenuIcon,
@@ -13,7 +15,6 @@ import {
   ChevronUp,
   ChevronDown,
   ExternalLink,
-  X,
 } from 'lucide-react'
 
 interface NavItem {
@@ -69,7 +70,7 @@ function NavItemModal({
   const [form, setForm] = useState<NavItem>(EMPTY)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const firstFieldRef = useRef<HTMLInputElement | null>(null)
+  const { toast } = useToast()
 
   const [collections, setCollections] = useState<any[]>([])
   const [categories, setCategories] = useState<any[]>([])
@@ -119,16 +120,7 @@ function NavItemModal({
       setForm(EMPTY)
     }
     setError('')
-    const t = setTimeout(() => firstFieldRef.current?.focus(), 0)
-    return () => clearTimeout(t)
   }, [editData, open])
-
-  useEffect(() => {
-    if (!open) return
-    const close = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
-    document.addEventListener('keydown', close)
-    return () => document.removeEventListener('keydown', close)
-  }, [open, onClose])
 
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }) as NavItem)
 
@@ -194,6 +186,7 @@ function NavItemModal({
       }
       onClose()
       onSuccess()
+      toast.success(editData ? 'Navigation item updated' : 'Navigation item added')
     } catch (e: any) {
       setError(e?.response?.data?.message || e?.message || 'Save failed')
     } finally {
@@ -215,27 +208,27 @@ function NavItemModal({
   if (!open) return null
 
   return (
-    <div
-      className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="nav-modal-title"
-    >
-      <div className="card w-full max-w-lg">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-          <h3 id="nav-modal-title" className="text-base font-semibold text-slate-900">
-            {editData ? 'Edit' : 'Add'} {isSubLink ? 'Sub-Link' : 'Navigation Item'}
-          </h3>
-          <button onClick={onClose} aria-label="Close" className="-mr-2 p-1.5 rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition">
-            <X className="w-5 h-5" />
+    <Dialog
+      onClose={onClose}
+      title={`${editData ? 'Edit' : 'Add'} ${isSubLink ? 'Sub-Link' : 'Navigation Item'}`}
+      busy={saving}
+      confirmOnDirty
+      footer={
+        <>
+          <button onClick={onClose} className="btn-outline">
+            Cancel
           </button>
-        </div>
-
-        <div className="px-6 py-5 space-y-4">
+          <button onClick={handleSubmit} disabled={saving} className="btn-primary">
+            {saving ? 'Saving…' : 'Save'}
+          </button>
+        </>
+      }
+    >
+        <div className="space-y-4">
           <div>
             <label className="form-label">Label *</label>
             <input
-              ref={firstFieldRef}
+              autoFocus
               className="form-input"
               value={form.label}
               onChange={(e) => set('label', e.target.value)}
@@ -348,17 +341,7 @@ function NavItemModal({
 
           {error && <p className="text-sm text-red-600">{error}</p>}
         </div>
-
-        <div className="px-6 py-4 border-t border-slate-200 flex justify-end gap-2 bg-slate-50/60 rounded-b-xl flex-shrink-0">
-          <button onClick={onClose} className="btn-outline">
-            Cancel
-          </button>
-          <button onClick={handleSubmit} disabled={saving} className="btn-primary">
-            {saving ? 'Saving…' : 'Save'}
-          </button>
-        </div>
-      </div>
-    </div>
+    </Dialog>
   )
 }
 
@@ -368,6 +351,7 @@ export default function NavigationPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editData, setEditData] = useState<NavItem | null>(null)
   const [addParentId, setAddParentId] = useState<string | null>(null)
+  const { toast } = useToast()
 
   async function reload() {
     setLoading(true)
@@ -430,7 +414,7 @@ export default function NavigationPage() {
       })
       reload()
     } catch {
-      alert('Failed to reorder')
+      toast.error('Failed to reorder — please try again')
     }
   }
 
@@ -440,7 +424,7 @@ export default function NavigationPage() {
       await api.delete(`/cms/navigation/${item.id}`)
       reload()
     } catch (e: any) {
-      alert(e?.response?.data?.message || e?.message || 'Failed to delete')
+      toast.error(e?.response?.data?.message || e?.message || 'Failed to delete')
     }
   }
 

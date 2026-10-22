@@ -3,6 +3,7 @@
 import { useEffect, useId, useState, isValidElement, cloneElement } from 'react'
 import PageHeader from '@/components/PageHeader'
 import MediaField from '@/components/MediaField'
+import { useToast } from '@/components/Toast'
 import api from '@/lib/api'
 import { Plus, Trash2, ArrowUpRight } from 'lucide-react'
 
@@ -22,8 +23,8 @@ export default function CustomizeEditor() {
   const [blogCatsError, setBlogCatsError] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
+  const { toast } = useToast()
 
   useEffect(() => {
     ;(async () => {
@@ -75,8 +76,7 @@ export default function CustomizeEditor() {
         : await api.post('/cms/sections', body)
       const newId = res.data?.data?.id || res.data?.id
       if (newId) setSecId(newId)
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2500)
+      toast.success('Saved & published to the storefront')
     } catch (e: any) {
       setError(e?.response?.data?.message || e?.message || 'Save failed')
     } finally {
@@ -146,9 +146,6 @@ export default function CustomizeEditor() {
         description="Every block on the storefront /customize page — hero, process steps, gallery, banner, guides and FAQ."
         actions={
           <div className="flex items-center gap-3">
-            <span role="status" aria-live="polite">
-              {saved && <span className="text-xs text-emerald-600">Saved ✓</span>}
-            </span>
             {error && <span className="text-xs text-red-600">{error}</span>}
             <a href={`${STOREFRONT}/customize`} target="_blank" rel="noopener noreferrer" className="btn-outline inline-flex items-center gap-1">
               View on site <ArrowUpRight className="w-4 h-4" />

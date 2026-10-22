@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import api from '@/lib/api'
-import { Inbox, X } from 'lucide-react'
+import { Inbox } from 'lucide-react'
+import Dialog from './Dialog'
 import EmptyState from './EmptyState'
 import PageHeader from './PageHeader'
+import { useToast } from './Toast'
 
 interface Field {
   key: string
@@ -31,6 +33,7 @@ export default function InboxView({ title, description, endpoint, fields, primar
     ? ['pending', 'confirmed', 'completed', 'cancelled']
     : ['new', 'in_progress', 'responded', 'closed']
   const submittedAt = (r: any) => (r?.createdAt || r?.created_at || '').slice(0, 16).replace('T', ' ')
+  const { toast } = useToast()
 
   // Same record the admin Communication screens read — changing it here
   // changes it there too.
@@ -41,6 +44,9 @@ export default function InboxView({ title, description, endpoint, fields, primar
       const next = { ...row, status, overdue: false }
       setRows((rs) => rs.map((r) => (r.id === row.id ? next : r)))
       setOpen(next)
+      toast.success(`Marked as ${status.replace('_', ' ')}`)
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || e?.message || 'Failed to update status')
     } finally {
       setSaving(false)
     }
@@ -72,15 +78,6 @@ export default function InboxView({ title, description, endpoint, fields, primar
     load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [endpoint])
-
-  useEffect(() => {
-    if (!open) return
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(null)
-    }
-    window.addEventListener('keydown', handleEsc)
-    return () => window.removeEventListener('keydown', handleEsc)
-  }, [open])
 
   return (
     <>
@@ -145,22 +142,12 @@ export default function InboxView({ title, description, endpoint, fields, primar
       )}
 
       {open && (
-        <div
-          className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
-          onClick={(e) => e.target === e.currentTarget && setOpen(null)}
+        <Dialog
+          onClose={() => setOpen(null)}
+          title={open[primaryField] || 'Submission'}
+          maxWidth="max-w-sm sm:max-w-xl"
+          bodyClassName=""
         >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="submission-title"
-            className="card w-full max-w-sm sm:max-w-xl max-h-[90vh] overflow-y-auto"
-          >
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-              <h3 id="submission-title" className="text-base font-semibold text-slate-900">{open[primaryField] || 'Submission'}</h3>
-              <button onClick={() => setOpen(null)} aria-label="Close" className="-mr-2 p-1.5 rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
             <div className="px-6 pt-4 flex items-center gap-2">
               <label htmlFor="submission-status" className="text-xs text-slate-600">Status</label>
               <select
@@ -189,8 +176,7 @@ export default function InboxView({ title, description, endpoint, fields, primar
                 </div>
               ))}
             </dl>
-          </div>
-        </div>
+        </Dialog>
       )}
     </>
   )

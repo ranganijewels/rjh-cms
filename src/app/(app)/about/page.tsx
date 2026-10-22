@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import PageHeader from '@/components/PageHeader'
 import MediaField from '@/components/MediaField'
+import { useToast } from '@/components/Toast'
 import api from '@/lib/api'
 import { Plus, Trash2 } from 'lucide-react'
 
@@ -55,7 +56,7 @@ export default function AboutEditor() {
   const [loading, setLoading] = useState(true)
   const [savingAll, setSavingAll] = useState(false)
   const [saveAllError, setSaveAllError] = useState('')
-  const [saveAllOk, setSaveAllOk] = useState(false)
+  const { toast } = useToast()
 
   async function reload() {
     setLoading(true)
@@ -86,13 +87,11 @@ export default function AboutEditor() {
   async function saveAll() {
     setSavingAll(true)
     setSaveAllError('')
-    setSaveAllOk(false)
     try {
       for (const key of ['explore', 'services', 'cta-banner']) {
         await saveSection(get(key))
       }
-      setSaveAllOk(true)
-      setTimeout(() => setSaveAllOk(false), 2000)
+      toast.success('All About sections saved & published')
       await reload()
     } catch (e: any) {
       setSaveAllError(e?.response?.data?.message || e?.message || 'Save failed')
@@ -108,7 +107,6 @@ export default function AboutEditor() {
         description="Story, values and CTA on the storefront About Us page. The top hero is edited on Banners & Hero → About Us."
         actions={
           <div className="flex items-center gap-3">
-            {saveAllOk && <span className="text-xs text-emerald-600">All sections saved ✓</span>}
             {saveAllError && <span className="text-xs text-red-600">{saveAllError}</span>}
             <a href={`${STOREFRONT}/about-us`} target="_blank" rel="noopener noreferrer" className="btn-outline">
               View on site ↗
@@ -137,15 +135,14 @@ export default function AboutEditor() {
 
 function SectionCard({ title, description, sec, onSaved, children }: any) {
   const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
+  const { toast } = useToast()
   async function doSave() {
     setSaving(true)
     setError('')
     try {
       await saveSection(sec)
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
+      toast.success('Saved & published to the storefront')
       onSaved()
     } catch (e: any) {
       setError(e?.response?.data?.message || e?.message || 'Save failed')
@@ -161,7 +158,6 @@ function SectionCard({ title, description, sec, onSaved, children }: any) {
           <p className="text-xs text-slate-500 mt-0.5">{description}</p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
-          {saved && <span className="text-xs text-emerald-600">Saved ✓</span>}
           {error && <span className="text-xs text-red-600">{error}</span>}
           <button onClick={doSave} disabled={saving} className="btn-primary">
             {saving ? 'Saving…' : 'Save & Publish'}

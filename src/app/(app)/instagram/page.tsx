@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import PageHeader from '@/components/PageHeader'
 import MediaField from '@/components/MediaField'
+import { useToast } from '@/components/Toast'
 import api from '@/lib/api'
 import { Plus, Trash2, ArrowUp, ArrowDown } from 'lucide-react'
 
@@ -20,8 +21,8 @@ export default function InstagramReelsEditor() {
   const [secId, setSecId] = useState<string | undefined>()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
+  const { toast } = useToast()
 
   useEffect(() => {
     ;(async () => {
@@ -48,8 +49,7 @@ export default function InstagramReelsEditor() {
       const id = res.data?.data?.id || res.data?.id
       if (id) setSecId(id)
       setItems(clean)
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2500)
+      toast.success('Reels saved — live on the homepage within a minute')
     } catch (e: any) {
       setError(e?.response?.data?.message || e?.message || 'Save failed')
     } finally {
@@ -79,7 +79,7 @@ export default function InstagramReelsEditor() {
         description="The “As Seen on Instagram” strip on the home page. Add each reel by hand — no Instagram login needed. Shown in this order (vertical 9:16 videos look best)."
         actions={
           <div className="flex items-center gap-3">
-            {saved && <span className="text-sm text-emerald-600">Saved — live within a minute</span>}
+            {error && <span className="text-sm text-red-600">{error}</span>}
             <button onClick={save} disabled={saving} className="btn-primary">{saving ? 'Saving…' : 'Save'}</button>
           </div>
         }
