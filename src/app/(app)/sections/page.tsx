@@ -141,7 +141,7 @@ export default function SectionsPage() {
         columns={[
           { key: 'position', header: '#', cell: (r) => <span className="text-xs text-slate-400">{r.position ?? '—'}</span> },
           { key: 'type', header: 'Type', cell: (r) => <span className="badge bg-slate-100 text-slate-700">{r.type}</span> },
-          { key: 'title', header: 'Title', cell: (r) => <span className="font-medium text-slate-900">{r.title || <span className="text-slate-400">Untitled</span>}</span> },
+          { key: 'title', header: 'Title', cell: (r) => <span className="font-medium text-slate-900">{r.title || <span className="text-slate-500">Untitled</span>}</span> },
           { key: 'is_visible', header: 'Visible', cell: (r) => r.is_visible !== false ? <span className="badge bg-emerald-50 text-emerald-700">Yes</span> : <span className="badge bg-slate-100 text-slate-600">No</span> },
           {
             key: '_actions',

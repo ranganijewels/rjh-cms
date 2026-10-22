@@ -61,6 +61,7 @@ export default function BlogIndex() {
       <DataTable
         loading={loading}
         rows={rows}
+        searchKeys={['title', 'slug']}
         onRowClick={(r) => router.push(`/blog/${r.slug}`)}
         columns={[
           { key: 'title', header: 'Title', cell: (r) => <span className="font-medium text-slate-900">{r.title}</span> },

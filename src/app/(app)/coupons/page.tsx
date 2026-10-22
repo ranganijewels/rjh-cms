@@ -91,6 +91,7 @@ export default function CouponsPage() {
       <DataTable
         loading={loading}
         rows={rows}
+        searchKeys={['code', 'description']}
         onRowClick={(r) => setEditing(r)}
         columns={[
           { key: 'code', header: 'Code', cell: (r) => <code className="font-mono text-sm font-semibold text-brand-700 bg-brand-50 px-2 py-0.5 rounded">{r.code}</code> },

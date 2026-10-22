@@ -113,7 +113,7 @@ export default function FaqsPage() {
               {c} <span className="text-slate-400">({countOf(c)})</span>
             </label>
           ))}
-          {!categories.length && <span className="text-sm text-slate-400">Add FAQs with a category first.</span>}
+          {!categories.length && <span className="text-sm text-slate-500">Add FAQs with a category first.</span>}
         </div>
         <div className="mt-3 flex items-center gap-3">
           <button onClick={saveSettings} className="btn-primary">Save</button>

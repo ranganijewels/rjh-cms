@@ -278,7 +278,7 @@ function NavItemModal({
                   </option>
                 ))}
               </select>
-              {form.url && <p className="text-[11px] text-slate-400 mt-1">→ {form.url}</p>}
+              {form.url && <p className="text-[11px] text-slate-500 mt-1">→ {form.url}</p>}
             </div>
           )}
 
@@ -327,7 +327,7 @@ function NavItemModal({
                     <option value="columns">Columns + CTA</option>
                     <option value="tiles">Media Tiles</option>
                   </select>
-                  <p className="text-[11px] text-slate-400 mt-1">
+                  <p className="text-[11px] text-slate-500 mt-1">
                     Edit the actual columns/links/images in{' '}
                     <Link href="/mega-menu" className="text-brand-600 hover:underline">
                       Mega Menu
@@ -545,7 +545,7 @@ export default function NavigationPage() {
                         )}
                       </div>
                       <div
-                        className="text-xs text-slate-400 flex items-center gap-1 min-w-0"
+                        className="text-xs text-slate-500 flex items-center gap-1 min-w-0"
                         title={child.url}
                       >
                         <span className="truncate">{child.url}</span>

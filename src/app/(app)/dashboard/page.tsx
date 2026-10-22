@@ -168,7 +168,7 @@ export default function DashboardPage() {
                   <div className="flex items-center justify-between gap-2">
                     {/* Fixed height keeps every KPI number on the same baseline
                         whether the label wraps to one line or two. */}
-                    <span className="flex h-8 items-start text-xs font-medium uppercase leading-4 tracking-wider text-white/45">
+                    <span className="flex h-8 items-start text-xs font-medium uppercase leading-4 tracking-wider text-white/65">
                       {t.label}
                     </span>
                     {t.error && (
@@ -189,14 +189,14 @@ export default function DashboardPage() {
                       aria-label="Loading count"
                     />
                   ) : t.error ? (
-                    <div className="mt-2 text-3xl font-semibold text-white/40">—</div>
+                    <div className="mt-2 text-3xl font-semibold text-white/55">—</div>
                   ) : (
                     <div className="mt-2 text-3xl font-semibold tracking-tight text-white">
                       {t.count}
                     </div>
                   )}
 
-                  <div className="mt-1 flex items-center gap-1.5 text-xs text-white/45 transition group-hover:text-white/80">
+                  <div className="mt-1 flex items-center gap-1.5 text-xs text-white/65 transition group-hover:text-white/90">
                     Manage
                     <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
                     <Icon className="ml-auto h-4 w-4 opacity-0 transition group-hover:opacity-60" aria-hidden="true" />

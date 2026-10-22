@@ -293,7 +293,7 @@ function HeroEditor() {
                   <img src={heroMedia} alt="Hero preview" width={800} height={450} className="w-full h-full object-cover" />
                 )
               ) : (
-                <div className="text-center text-slate-400 text-sm py-10 pointer-events-none">
+                <div className="text-center text-slate-500 text-sm py-10 pointer-events-none">
                   <Film className="w-8 h-8 mx-auto mb-2" />
                   No hero media yet
                 </div>
@@ -356,7 +356,7 @@ function HeroEditor() {
                 </button>
               </div>
             ) : (
-              <p className="text-xs text-slate-400">Uses the desktop media when empty.</p>
+              <p className="text-xs text-slate-500">Uses the desktop media when empty.</p>
             )}
           </div>
 
