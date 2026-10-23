@@ -63,7 +63,21 @@ npm run build    # production build (also runs typecheck + lint)
 npm run start    # serve the build on :3001
 npm run lint     # ESLint (next/core-web-vitals + next/typescript)
 npx tsc --noEmit # strict-mode typecheck
+npm run test:e2e     # Playwright smoke suite (builds + serves the prod build on :3100)
+npm run test:e2e:ui  # same suite in Playwright UI mode
 ```
+
+## E2E smoke tests
+
+`e2e/` contains a hermetic Playwright suite: every browser → API call
+(including the `/api/auth/*` BFF routes) is answered by fixtures in
+`e2e/helpers.ts`, so the tests never reach `api.ranganijewelry.com` and need
+no credentials — they run on any machine or CI runner. Coverage: middleware
+login gate, security headers (CSP/nosniff/etc. locked in by the S1
+hardening), login success + failure, dashboard KPI rendering, and the
+homepage editor's save flow (success toast + inline error path). The suite
+always runs against the **production** build, so the strict CSP is exercised
+on every run.
 
 ## Quality gates
 
@@ -72,4 +86,4 @@ npx tsc --noEmit # strict-mode typecheck
   **warn** in `.eslintrc.json`: there are ~180 pre-existing `any`s across the
   legacy editors, kept visible as debt rather than hidden or mass-refactored.
 - GitHub Actions (`.github/workflows/ci.yml`) runs install → typecheck →
-  lint → build on every push/PR to `main`.
+  lint → build → Playwright smoke tests on every push/PR to `main`.
