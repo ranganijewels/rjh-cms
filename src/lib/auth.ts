@@ -1,4 +1,5 @@
-import api, { setAccessToken } from './api'
+import axios from 'axios'
+import api, { getAccessToken, readCookie, setAccessToken } from './api'
 
 export interface CmsUser {
   id: string
@@ -9,30 +10,35 @@ export interface CmsUser {
 }
 
 export async function signIn(email: string, password: string) {
-  const { data } = await api.post('/auth/login', { email, password })
-  const { accessToken, refreshToken, user } = data.data
+  // Same-origin BFF: /api/auth/login forwards to the API and stores the
+  // refresh token in an HttpOnly cookie — the browser script only ever gets
+  // the short-lived access token back.
+  const { data } = await axios.post('/api/auth/login', { email, password })
+  const { accessToken, user } = data.data
   setAccessToken(accessToken)
   if (typeof window !== 'undefined') {
-    localStorage.setItem('cms_refresh_token', refreshToken)
+    // The access cookie stays JS-readable on purpose: it feeds the sidebar
+    // identity badge and survives reloads for 15 min. The long-lived secret
+    // (refresh) lives only in the HttpOnly cookie now.
     document.cookie = `cms_access_token=${accessToken}; path=/; max-age=900; SameSite=Lax`
-    document.cookie = `cms_refresh_token=${refreshToken}; path=/; max-age=604800; SameSite=Lax`
   }
   return user as CmsUser
 }
 
 export async function signOut() {
   try {
-    const refreshToken =
-      typeof window !== 'undefined'
-        ? localStorage.getItem('cms_refresh_token')
-        : null
-    await api.post('/auth/logout', { refreshToken })
+    // The BFF route reads the refresh token from the HttpOnly cookie itself;
+    // we only forward the access token so the API can verify the caller.
+    const token = getAccessToken() || readCookie('cms_access_token')
+    await axios.post('/api/auth/logout', {}, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
   } catch {}
   setAccessToken(null)
   if (typeof window !== 'undefined') {
-    localStorage.removeItem('cms_refresh_token')
+    localStorage.removeItem('cms_refresh_token') // legacy pre-BFF copy
     document.cookie = 'cms_access_token=; path=/; max-age=0'
-    document.cookie = 'cms_refresh_token=; path=/; max-age=0'
+    // The HttpOnly refresh cookie is cleared server-side by /api/auth/logout.
   }
 }
 

@@ -10,31 +10,34 @@ export const setAccessToken = (t: string | null) => {
 }
 export const getAccessToken = () => memoryToken
 
-function readCookie(name: string): string | null {
+export function readCookie(name: string): string | null {
   if (typeof document === 'undefined') return null
   const m = document.cookie.match(new RegExp('(^|; )' + name + '=([^;]+)'))
   return m ? decodeURIComponent(m[2]) : null
 }
 
-// Refresh the CMS access token via the refresh token. Returns the new access
-// token (and updates memory + cookies), or null if refresh isn't possible.
+// Migration: the refresh token used to live in localStorage (pre-BFF). The
+// HttpOnly cookie managed by /api/auth/* is the source of truth now — drop
+// any legacy copy so scripts can't read it. Existing sessions keep working:
+// the cookie was always set alongside the localStorage entry at login.
+if (typeof window !== 'undefined') localStorage.removeItem('cms_refresh_token')
+
+// Refresh the CMS access token through the same-origin BFF
+// (/api/auth/refresh), which reads the HttpOnly refresh cookie server-side
+// and rotates it upstream — JS never touches the refresh token. Returns the
+// new access token (and updates memory + the short-lived access cookie),
+// or null if refresh isn't possible.
 // Exported so raw fetch() callers (file uploads) can refresh like axios does.
 export async function refreshAccessToken(): Promise<string | null> {
-  const refreshToken =
-    typeof window !== 'undefined' ? localStorage.getItem('cms_refresh_token') : null
-  if (!refreshToken) return null
+  if (typeof window === 'undefined') return null
   try {
-    const { data } = await axios.post(`${API_BASE}/auth/refresh`, { refreshToken })
-    const newAccess = data.data.accessToken
-    const newRefresh = data.data.refreshToken
+    // Bare axios (not the `api` instance) so a failed refresh can't re-enter
+    // the 401 interceptor below and loop.
+    const { data } = await axios.post('/api/auth/refresh')
+    const newAccess = data?.data?.accessToken
+    if (!newAccess) return null
     setAccessToken(newAccess)
-    if (typeof window !== 'undefined') {
-      if (newRefresh) localStorage.setItem('cms_refresh_token', newRefresh)
-      document.cookie = `cms_access_token=${newAccess}; path=/; max-age=900; SameSite=Lax`
-      if (newRefresh) {
-        document.cookie = `cms_refresh_token=${newRefresh}; path=/; max-age=604800; SameSite=Lax`
-      }
-    }
+    document.cookie = `cms_access_token=${newAccess}; path=/; max-age=900; SameSite=Lax`
     return newAccess
   } catch {
     return null
@@ -99,32 +102,18 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true
       try {
-        const refreshToken =
-          typeof window !== 'undefined'
-            ? localStorage.getItem('cms_refresh_token')
-            : null
-        if (!refreshToken) throw new Error('No refresh token')
-        const { data } = await axios.post(`${API_BASE}/auth/refresh`, {
-          refreshToken,
-        })
-        const newAccess = data.data.accessToken
-        const newRefresh = data.data.refreshToken
-        setAccessToken(newAccess)
-        if (typeof window !== 'undefined') {
-          if (newRefresh) localStorage.setItem('cms_refresh_token', newRefresh)
-          document.cookie = `cms_access_token=${newAccess}; path=/; max-age=900; SameSite=Lax`
-          if (newRefresh) {
-            document.cookie = `cms_refresh_token=${newRefresh}; path=/; max-age=604800; SameSite=Lax`
-          }
-        }
+        // Same-origin BFF refresh — reads the HttpOnly cookie server-side.
+        const newAccess = await refreshAccessToken()
+        if (!newAccess) throw new Error('Refresh failed')
         originalRequest.headers.Authorization = `Bearer ${newAccess}`
         return api(originalRequest)
       } catch {
+        // Hard logout: drop local credentials and close the middleware gate
+        // (the BFF logout is what clears the HttpOnly cookie — JS can't).
         setAccessToken(null)
         if (typeof window !== 'undefined') {
-          localStorage.removeItem('cms_refresh_token')
           document.cookie = 'cms_access_token=; path=/; max-age=0'
-          document.cookie = 'cms_refresh_token=; path=/; max-age=0'
+          axios.post('/api/auth/logout').catch(() => {})
           if (!window.location.pathname.startsWith('/login')) {
             window.location.href = '/login'
           }

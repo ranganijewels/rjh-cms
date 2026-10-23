@@ -17,6 +17,10 @@ function publicUrl(req: NextRequest, path: string) {
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
   if (PUBLIC.some((p) => pathname.startsWith(p))) return NextResponse.next()
+  // Presence check only: any value passes here. The cookie is now the
+  // HttpOnly one set by the /api/auth/* BFF routes (JS can't touch it);
+  // real validation happens upstream on every API call, and a dead session
+  // cookie is cleared on its next failed refresh.
   const refresh = req.cookies.get('cms_refresh_token')?.value
   if (!refresh) {
     const url = publicUrl(req, '/login')
