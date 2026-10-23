@@ -1,14 +1,20 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '@/components/Toast'
 import api from './api'
 
-// ─── Shared section-editor data layer ───────────────────────────────────────
+// ─── Shared section-editor data layer (React Query) ─────────────────────────
 // Every storefront-page editor in the CMS is built on `cms_sections` rows:
 // load them for a page, edit `content`, PUT (or POST when new) back. This
 // module owns that lifecycle so pages only carry their unique UI.
 //
-// Increment S4a of the data-layer refactor. S4b (React Query) swaps the
-// internals here for a cache — the pages above this API don't change.
+// Server state lives in the React Query cache (keyed per page/section):
+// - background refetch when a page remounts within staleTime (30s),
+// - automatic retry (once) + dedupe of concurrent loads,
+// - editors that open the same page (e.g. homepage + instagram) share one
+//   cached section list.
+// The public API below is unchanged from the pre-React-Query version, so
+// pages are pure consumers.
 
 export type SectionContent = Record<string, any>
 
@@ -48,40 +54,37 @@ function sectionBody(pageSlug: string, sec: SectionRecord, content: SectionConte
   }
 }
 
+async function fetchSectionMap(pageSlug: string): Promise<Record<string, SectionRecord>> {
+  const r = await api.get('/cms/sections', { params: { pageSlug } })
+  const map: Record<string, SectionRecord> = {}
+  for (const s of r.data?.data || []) map[s.sectionKey] = toRecord(s)
+  return map
+}
+
 /**
  * All sections of one page, keyed by sectionKey — the shape the multi-card
  * editors (homepage, about) work with.
  *
  * - `get(key, defaults?)` — a section, or a ready-to-edit blank with the
  *   given defaults.
- * - `setContent(key, content)` / `setSec(key, sec)` — local edits.
+ * - `setContent(key, content)` / `setSec(key, sec)` — local edits, written
+ *   straight into the cache.
  * - `saveSection(sec, content?)` — PUT when the section exists, POST
  *   otherwise; remembers the new id so the next save updates.
  * - `saveKeys(keys)` — sequential save-all (aborts on first error).
  */
 export function useSections(pageSlug: string) {
-  const [sections, setSections] = useState<Record<string, SectionRecord>>({})
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const queryClient = useQueryClient()
+  const queryKey = ['cms-sections', pageSlug] as const
 
-  const reload = useCallback(async () => {
-    setLoading(true)
-    setError('')
-    try {
-      const r = await api.get('/cms/sections', { params: { pageSlug } })
-      const map: Record<string, SectionRecord> = {}
-      for (const s of r.data?.data || []) map[s.sectionKey] = toRecord(s)
-      setSections(map)
-    } catch (e: any) {
-      setError(e?.message || 'Load failed')
-    } finally {
-      setLoading(false)
-    }
-  }, [pageSlug])
+  const query = useQuery({
+    queryKey,
+    queryFn: () => fetchSectionMap(pageSlug),
+  })
 
-  useEffect(() => {
-    reload()
-  }, [reload])
+  // Edits are written into the cache itself — one source of truth, and the
+  // pre-React-Query API (sections/setSections-shaped helpers) is preserved.
+  const sections = query.data ?? {}
 
   const get = useCallback(
     (key: string, defaults?: Partial<SectionRecord>): SectionRecord =>
@@ -96,17 +99,26 @@ export function useSections(pageSlug: string) {
     [sections],
   )
 
-  const setContent = useCallback((key: string, content: SectionContent) => {
-    setSections((prev) => {
-      const base =
-        prev[key] || { sectionKey: key, sectionType: 'custom', label: key, sortOrder: 0, content: {} }
-      return { ...prev, [key]: { ...base, content } }
-    })
-  }, [])
+  const setContent = useCallback(
+    (key: string, content: SectionContent) => {
+      queryClient.setQueryData<Record<string, SectionRecord>>(queryKey, (prev) => {
+        const base =
+          prev?.[key] || { sectionKey: key, sectionType: 'custom', label: key, sortOrder: 0, content: {} }
+        return { ...(prev || {}), [key]: { ...base, content } }
+      })
+    },
+    [queryClient, pageSlug],
+  )
 
-  const setSec = useCallback((key: string, sec: SectionRecord) => {
-    setSections((prev) => ({ ...prev, [key]: sec }))
-  }, [])
+  const setSec = useCallback(
+    (key: string, sec: SectionRecord) => {
+      queryClient.setQueryData<Record<string, SectionRecord>>(queryKey, (prev) => ({
+        ...(prev || {}),
+        [key]: sec,
+      }))
+    },
+    [queryClient, pageSlug],
+  )
 
   const saveSection = useCallback(
     async (sec: SectionRecord, content?: SectionContent) => {
@@ -117,14 +129,14 @@ export function useSections(pageSlug: string) {
       const newId = idOf(res)
       if (newId && !sec.id) {
         // Remember the id so a second save updates instead of duplicating.
-        setSections((prev) => ({
-          ...prev,
-          [sec.sectionKey]: { ...prev[sec.sectionKey], id: newId, content: nextContent },
+        queryClient.setQueryData<Record<string, SectionRecord>>(queryKey, (prev) => ({
+          ...(prev || {}),
+          [sec.sectionKey]: { ...(prev?.[sec.sectionKey] || sec), id: newId, content: nextContent },
         }))
       }
       return res
     },
-    [pageSlug],
+    [queryClient, pageSlug],
   )
 
   const saveKeys = useCallback(
@@ -134,7 +146,21 @@ export function useSections(pageSlug: string) {
     [saveSection, get],
   )
 
-  return { sections, loading, error, reload, get, setContent, setSec, saveSection, saveKeys }
+  const reload = useCallback(async () => {
+    await query.refetch()
+  }, [query])
+
+  return {
+    sections,
+    loading: query.isPending,
+    error: query.isError ? (query.error as any)?.message || 'Load failed' : '',
+    reload,
+    get,
+    setContent,
+    setSec,
+    saveSection,
+    saveKeys,
+  }
 }
 
 export interface UseSectionOptions {
@@ -151,48 +177,53 @@ export interface UseSectionOptions {
  * PUTs/POSTs, records a freshly created id, and toasts on success.
  */
 export function useSection(pageSlug: string, sectionKey: string, opts: UseSectionOptions = {}) {
-  const [sec, setSec] = useState<SectionRecord | null>(null)
-  const [content, setContent] = useState<SectionContent | null>(null)
-  const [loading, setLoading] = useState(true)
+  const queryClient = useQueryClient()
+  const { toast } = useToast()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const { toast } = useToast()
+  const queryKey = ['cms-section', pageSlug, sectionKey] as const
   // Option closures are recreated each render; keep the latest without
   // making them effect dependencies (that would refetch forever).
   const optsRef = useRef(opts)
   optsRef.current = opts
 
-  useEffect(() => {
-    let cancelled = false
-    ;(async () => {
-      setLoading(true)
-      setError('')
-      try {
-        const r = await api.get('/cms/sections', { params: { pageSlug } })
-        const found = (r.data?.data || []).find((s: any) => s.sectionKey === sectionKey)
-        if (cancelled) return
-        setSec(found ? toRecord(found) : null)
-        if (found?.content && typeof found.content === 'object' && Object.keys(found.content).length) {
-          setContent(found.content)
-        } else if (optsRef.current.fetchDefaults) {
-          setContent(await optsRef.current.fetchDefaults())
-        } else {
-          setContent(found?.content || {})
-        }
-      } catch (e: any) {
-        if (!cancelled) setError(e?.message || 'Load failed')
-      } finally {
-        if (!cancelled) setLoading(false)
+  const query = useQuery({
+    queryKey,
+    queryFn: async () => {
+      const r = await api.get('/cms/sections', { params: { pageSlug } })
+      const found = (r.data?.data || []).find((s: any) => s.sectionKey === sectionKey)
+      const record = found ? toRecord(found) : null
+      if (found?.content && typeof found.content === 'object' && Object.keys(found.content).length) {
+        return record!
       }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [pageSlug, sectionKey])
+      if (optsRef.current.fetchDefaults) {
+        const fallback = await optsRef.current.fetchDefaults()
+        return { ...(record || { sectionKey, sectionType: 'custom', label: sectionKey, sortOrder: 0 }), content: fallback }
+      }
+      return record || { sectionKey, sectionType: 'custom', label: sectionKey, sortOrder: 0, content: {} }
+    },
+  })
 
-  const patch = useCallback((p: SectionContent) => {
-    setContent((prev) => ({ ...(prev || {}), ...p }))
-  }, [])
+  const sec = query.data ?? null
+  const content: SectionContent | null = sec?.content ?? null
+
+  const setContent = useCallback(
+    (next: SectionContent) => {
+      queryClient.setQueryData<SectionRecord>(queryKey, (prev) =>
+        prev ? { ...prev, content: next } : prev,
+      )
+    },
+    [queryClient, pageSlug, sectionKey],
+  )
+
+  const patch = useCallback(
+    (p: SectionContent) => {
+      queryClient.setQueryData<SectionRecord>(queryKey, (prev) =>
+        prev ? { ...prev, content: { ...(prev.content || {}), ...p } } : prev,
+      )
+    },
+    [queryClient, pageSlug, sectionKey],
+  )
 
   async function save(overrides?: { content?: SectionContent; successMessage?: string }) {
     setSaving(true)
@@ -201,18 +232,25 @@ export function useSection(pageSlug: string, sectionKey: string, opts: UseSectio
       const nextContent = overrides?.content ?? content ?? {}
       const base: SectionRecord = sec || {
         sectionKey,
-        sectionType: opts.createDefaults?.sectionType || 'custom',
-        label: opts.createDefaults?.label || sectionKey,
-        sortOrder: opts.createDefaults?.sortOrder ?? 0,
+        sectionType: optsRef.current.createDefaults?.sectionType || 'custom',
+        label: optsRef.current.createDefaults?.label || sectionKey,
+        sortOrder: optsRef.current.createDefaults?.sortOrder ?? 0,
         content: {},
       }
       const res = base.id
         ? await api.put(`/cms/sections/${base.id}`, sectionBody(pageSlug, base, nextContent))
         : await api.post('/cms/sections', sectionBody(pageSlug, base, nextContent))
       const newId = idOf(res)
-      if (newId && !sec) setSec({ ...base, id: newId, content: nextContent })
-      if (overrides?.content) setContent(nextContent)
-      toast.success(overrides?.successMessage || opts.successMessage || 'Saved & published to the storefront')
+      if (newId && !sec?.id) {
+        queryClient.setQueryData<SectionRecord>(queryKey, {
+          ...base,
+          id: newId,
+          content: nextContent,
+        })
+      }
+      toast.success(
+        overrides?.successMessage || optsRef.current.successMessage || 'Saved & published to the storefront',
+      )
       return res
     } catch (e: any) {
       setError(e?.response?.data?.message || e?.message || 'Save failed')
@@ -221,7 +259,16 @@ export function useSection(pageSlug: string, sectionKey: string, opts: UseSectio
     }
   }
 
-  return { sec, content, setContent, patch, loading, saving, error, save }
+  return {
+    sec,
+    content,
+    setContent,
+    patch,
+    loading: query.isPending,
+    saving,
+    error: error || (query.isError ? (query.error as any)?.message || 'Load failed' : ''),
+    save,
+  }
 }
 
 /**
