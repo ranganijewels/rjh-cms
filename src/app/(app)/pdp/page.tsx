@@ -1,15 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import PageHeader from '@/components/PageHeader'
 import MediaField from '@/components/MediaField'
-import { useToast } from '@/components/Toast'
-import api from '@/lib/api'
+import { EditorCard } from '@/components/editor'
+import { useList, useSection } from '@/lib/useSections'
 import { Plus, Trash2 } from 'lucide-react'
 
 const STOREFRONT = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'http://localhost:3000'
-const PAGE = 'product'
-const KEY = 'pdp-content'
 
 const TRUST_ICONS = ['shipping', 'diamond', 'returns', 'lock', 'warranty', 'certificate']
 const QUICK_ICONS = ['ruler', 'calendar', 'shipping']
@@ -19,50 +16,17 @@ const QUICK_ICONS = ['ruler', 'calendar', 'shipping']
 // accordions, and the brand pillars. One "pdp-content" section (pageSlug=product);
 // the storefront /api/pdp-content serves it with defaults.
 export default function PdpEditor() {
-  const [content, setContent] = useState<any | null>(null)
-  const [secId, setSecId] = useState<string | undefined>()
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
-  const { toast } = useToast()
-
-  useEffect(() => {
-    ;(async () => {
-      setLoading(true)
-      try {
-        const r = await api.get('/cms/sections', { params: { pageSlug: PAGE } })
-        const sec = (r.data?.data || []).find((s: any) => s.sectionKey === KEY)
-        setSecId(sec?.id)
-        if (sec?.content && typeof sec.content === 'object' && Object.keys(sec.content).length) {
-          setContent(sec.content)
-        } else {
-          const res = await fetch(`${STOREFRONT}/api/pdp-content`)
-          const json = await res.json()
-          setContent(json?.data || {})
-        }
-      } catch (e: any) {
-        setError(e?.message || 'Load failed')
-      } finally {
-        setLoading(false)
-      }
-    })()
-  }, [])
-
-  async function save() {
-    setSaving(true)
-    setError('')
-    try {
-      const body = { pageSlug: PAGE, sectionKey: KEY, sectionType: 'custom', label: 'Product Detail Content', sortOrder: 0, isPublished: true, content }
-      const res = secId ? await api.put(`/cms/sections/${secId}`, body) : await api.post('/cms/sections', body)
-      const newId = res.data?.data?.id || res.data?.id
-      if (newId) setSecId(newId)
-      toast.success('Saved & published to the storefront')
-    } catch (e: any) {
-      setError(e?.response?.data?.message || e?.message || 'Save failed')
-    } finally {
-      setSaving(false)
-    }
-  }
+  // One section (product/pdp-content); empty sections fall back to the
+  // storefront's own defaults. Load, PUT/POST save, new-id tracking, toast
+  // and error state all live in the hook.
+  const { content, patch, loading, saving, error, save } = useSection('product', 'pdp-content', {
+    fetchDefaults: async () => {
+      const res = await fetch(`${STOREFRONT}/api/pdp-content`)
+      const json = await res.json()
+      return json?.data || {}
+    },
+    createDefaults: { sectionType: 'custom', label: 'Product Detail Content', sortOrder: 0 },
+  })
 
   if (loading || !content) return (
     <div className="card p-6 animate-pulse space-y-3" aria-busy="true" aria-live="polite">
@@ -72,7 +36,6 @@ export default function PdpEditor() {
     </div>
   )
 
-  const patch = (p: any) => setContent({ ...content, ...p })
   const badges: any[] = Array.isArray(content.trust_badges) ? content.trust_badges : []
   const why: any[] = Array.isArray(content.why_choose) ? content.why_choose : []
   const fin = content.financing || {}
@@ -92,11 +55,8 @@ export default function PdpEditor() {
   const bcItems: any[] = Array.isArray(bc.items) ? bc.items : []
   const patchBc = (p: any) => patch({ build_columns: { ...bc, ...p } })
 
-  const list = (items: any[], set: (n: any[]) => void, blank: () => any) => ({
-    update: (i: number, v: any) => set(items.map((it, idx) => (idx === i ? (typeof it === 'string' ? v : { ...it, ...v }) : it))),
-    remove: (i: number) => set(items.filter((_, idx) => idx !== i)),
-    add: () => set([...items, blank()]),
-  })
+  // Shared string-or-object list helper, aliased to the existing call sites.
+  const list = useList
   const bl = list(badges, (n) => patch({ trust_badges: n }), () => ({ icon: 'shipping', label: '' }))
   const wl = list(why, (n) => patch({ why_choose: n }), () => ({ image: '', service_description: '' }))
   const sl = list(ship, (n) => patch({ shipping_returns: n }), () => '')
@@ -113,7 +73,7 @@ export default function PdpEditor() {
         actions={
           <div className="flex items-center gap-3">
             {error && <span className="text-xs text-red-600">{error}</span>}
-            <button onClick={save} disabled={saving} className="btn-primary">
+            <button onClick={() => save()} disabled={saving} className="btn-primary">
               {saving ? 'Saving…' : 'Save & Publish'}
             </button>
           </div>
@@ -122,7 +82,7 @@ export default function PdpEditor() {
 
       <div className="space-y-6">
         {/* Trust badges */}
-        <Card title="Trust Badges" description="The 4 reassurance badges under the Add-to-Bag button.">
+        <EditorCard title="Trust Badges" description="The 4 reassurance badges under the Add-to-Bag button.">
           <div className="space-y-2">
             {badges.map((b, i) => (
               <div key={i} className="flex gap-2 items-center">
@@ -135,10 +95,10 @@ export default function PdpEditor() {
             ))}
             <button onClick={bl.add} className="btn-outline"><Plus className="w-4 h-4" /> Add badge</button>
           </div>
-        </Card>
+        </EditorCard>
 
         {/* Why choose features */}
-        <Card title="Why Choose (feature icons)" description="The icon + text assurances lower on the product column.">
+        <EditorCard title="Why Choose (feature icons)" description="The icon + text assurances lower on the product column.">
           <div className="grid sm:grid-cols-2 gap-3">
             {why.map((w, i) => (
               <div key={i} className="flex gap-3 items-start border border-slate-200 rounded-lg p-3">
@@ -153,10 +113,10 @@ export default function PdpEditor() {
             ))}
           </div>
           <button onClick={wl.add} className="btn-outline mt-3"><Plus className="w-4 h-4" /> Add feature</button>
-        </Card>
+        </EditorCard>
 
         {/* Financing */}
-        <Card title="Financing Line" description="The 'approximately $X/mo' line under the price.">
+        <EditorCard title="Financing Line" description="The 'approximately $X/mo' line under the price.">
           <div className="flex flex-wrap items-end gap-4">
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked={fin.enabled !== false} onChange={(e) => patch({ financing: { ...fin, enabled: e.target.checked } })} />
@@ -172,18 +132,18 @@ export default function PdpEditor() {
               <p className="text-xs text-slate-500 mt-1">Shown after the /mo line — clear it once BNPL is live.</p>
             </div>
           </div>
-        </Card>
+        </EditorCard>
 
         {/* Shipping & Care accordions */}
-        <Card title="Shipping & Returns" description="Bullet points in the Shipping & Returns accordion.">
+        <EditorCard title="Shipping & Returns" description="Bullet points in the Shipping & Returns accordion.">
           <BulletList items={ship} list={sl} placeholder="Complimentary insured shipping…" />
-        </Card>
-        <Card title="Certification & Care" description="Bullet points in the Certification & Care accordion.">
+        </EditorCard>
+        <EditorCard title="Certification & Care" description="Bullet points in the Certification & Care accordion.">
           <BulletList items={care} list={cl} placeholder="Each diamond is graded…" />
-        </Card>
+        </EditorCard>
 
         {/* The RJ House Difference (story + accordions) */}
-        <Card title="The RJ House Difference" description="Two-column band below the product: brand story + link on the left, accordions on the right.">
+        <EditorCard title="The RJ House Difference" description="Two-column band below the product: brand story + link on the left, accordions on the right.">
           <div className="grid md:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="form-label">Heading</label>
@@ -216,10 +176,10 @@ export default function PdpEditor() {
             ))}
             <button onClick={dl.add} className="btn-outline"><Plus className="w-4 h-4" /> Add accordion</button>
           </div>
-        </Card>
+        </EditorCard>
 
         {/* Build your own — 3 columns */}
-        <Card title="Build Your Own (3 columns)" description="The 3-up editorial (Personalized / Diamonds / Atelier) under the bespoke banner.">
+        <EditorCard title="Build Your Own (3 columns)" description="The 3-up editorial (Personalized / Diamonds / Atelier) under the bespoke banner.">
           <div className="flex flex-wrap items-end gap-4 mb-4">
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked={bc.enabled !== false} onChange={(e) => patchBc({ enabled: e.target.checked })} />
@@ -249,10 +209,10 @@ export default function PdpEditor() {
             ))}
             <button onClick={bcl.add} className="btn-outline"><Plus className="w-4 h-4" /> Add column</button>
           </div>
-        </Card>
+        </EditorCard>
 
         {/* Build Your Own CTA */}
-        <Card title="Build Your Own (bespoke CTA)" description="The full-width image banner below the product that invites shoppers into the customize journey.">
+        <EditorCard title="Build Your Own (bespoke CTA)" description="The full-width image banner below the product that invites shoppers into the customize journey.">
           <label className="flex items-center gap-2 text-sm mb-4">
             <input type="checkbox" checked={byo.enabled !== false} onChange={(e) => patchByo({ enabled: e.target.checked })} />
             Show this section
@@ -286,10 +246,10 @@ export default function PdpEditor() {
               <MediaField label="Background image" value={byo.image || ''} onChange={(url) => patchByo({ image: url })} prefix="pdp/byo" />
             </div>
           </div>
-        </Card>
+        </EditorCard>
 
         {/* Quick links strip */}
-        <Card title="Quick Links" description="The 3-up icon link strip (Ring Size Guide / Book a Consultation / Shipping) below the brand pillars.">
+        <EditorCard title="Quick Links" description="The 3-up icon link strip (Ring Size Guide / Book a Consultation / Shipping) below the brand pillars.">
           <label className="flex items-center gap-2 text-sm mb-4">
             <input type="checkbox" checked={ql.enabled !== false} onChange={(e) => patchQl({ enabled: e.target.checked })} />
             Show this section
@@ -307,10 +267,10 @@ export default function PdpEditor() {
             ))}
             <button onClick={qll.add} className="btn-outline"><Plus className="w-4 h-4" /> Add link</button>
           </div>
-        </Card>
+        </EditorCard>
 
         {/* Expert designers contact */}
-        <Card title="Expert Designers Contact" description="The 'Get in touch with one of our Expert Designers' form near the bottom of the product page. Submissions arrive in Custom Requests.">
+        <EditorCard title="Expert Designers Contact" description="The 'Get in touch with one of our Expert Designers' form near the bottom of the product page. Submissions arrive in Custom Requests.">
           <label className="flex items-center gap-2 text-sm mb-4">
             <input type="checkbox" checked={ec.enabled !== false} onChange={(e) => patchEc({ enabled: e.target.checked })} />
             Show this section
@@ -329,7 +289,7 @@ export default function PdpEditor() {
               <textarea className="form-textarea min-h-[60px]" value={ec.description || ''} onChange={(e) => patchEc({ description: e.target.value })} placeholder="Questions about this piece…" />
             </div>
           </div>
-        </Card>
+        </EditorCard>
       </div>
     </>
   )
@@ -345,18 +305,6 @@ function BulletList({ items, list, placeholder }: any) {
         </div>
       ))}
       <button onClick={list.add} className="btn-outline"><Plus className="w-4 h-4" /> Add line</button>
-    </div>
-  )
-}
-
-function Card({ title, description, children }: any) {
-  return (
-    <div className="card overflow-hidden">
-      <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/60">
-        <h3 className="text-[15px] font-semibold text-slate-900">{title}</h3>
-        <p className="text-xs text-slate-500 mt-0.5">{description}</p>
-      </div>
-      <div className="p-5">{children}</div>
     </div>
   )
 }

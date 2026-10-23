@@ -1,96 +1,34 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import PageHeader from '@/components/PageHeader'
 import MediaField from '@/components/MediaField'
 import { useToast } from '@/components/Toast'
-import api from '@/lib/api'
+import { EditorSkeleton, Field, SectionCard } from '@/components/editor'
+import { useList, useSections } from '@/lib/useSections'
 import { Plus, Trash2 } from 'lucide-react'
 
 const STOREFRONT = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'http://localhost:3000'
 const PAGE = 'about-us'
 
-type Content = Record<string, any>
-interface Loaded {
-  id?: string
-  sectionKey: string
-  sectionType: string
-  label: string
-  content: Content
-}
-
-async function loadSections(): Promise<Record<string, Loaded>> {
-  const r = await api.get('/cms/sections', { params: { pageSlug: PAGE } })
-  const map: Record<string, Loaded> = {}
-  for (const s of r.data?.data || []) {
-    map[s.sectionKey] = {
-      id: s.id,
-      sectionKey: s.sectionKey,
-      sectionType: s.sectionType || 'custom',
-      label: s.label || s.sectionKey,
-      content: s.content || {},
-    }
-  }
-  return map
-}
-
-async function saveSection(sec: Loaded) {
-  const body = {
-    pageSlug: PAGE,
-    sectionType: sec.sectionType,
-    label: sec.label,
-    isPublished: true,
-    content: sec.content,
-    sectionKey: sec.sectionKey,
-  }
-  if (sec.id) return api.put(`/cms/sections/${sec.id}`, body)
-  return api.post('/cms/sections', body)
-}
-
 // Editor for the storefront About Us page. The top hero is managed on Banners &
 // Hero (About Us). Here we manage the Story/Explore blocks, the "Rangani
 // Standard" services grid, and the CTA banner — each a CMS section that the
-// /api/about route merges over its defaults.
+// /api/about route merges over its defaults. Load/save state lives in
+// useSections(); this page is pure UI.
 export default function AboutEditor() {
-  const [sections, setSections] = useState<Record<string, Loaded>>({})
-  const [loading, setLoading] = useState(true)
+  const { loading, get, setContent, saveSection, saveKeys, reload } = useSections(PAGE)
   const [savingAll, setSavingAll] = useState(false)
   const [saveAllError, setSaveAllError] = useState('')
   const { toast } = useToast()
 
-  async function reload() {
-    setLoading(true)
-    try {
-      setSections(await loadSections())
-    } finally {
-      setLoading(false)
-    }
-  }
-  useEffect(() => {
-    reload()
-  }, [])
-
-  if (loading) return (
-    <div className="card p-6 animate-pulse space-y-3" aria-busy="true" aria-live="polite">
-      <div className="h-4 bg-slate-200 rounded w-1/4" />
-      <div className="h-3 bg-slate-100 rounded w-1/2" />
-      <div className="h-3 bg-slate-100 rounded w-1/3" />
-    </div>
-  )
-
-  const get = (key: string): Loaded =>
-    sections[key] || { sectionKey: key, sectionType: 'custom', label: key, content: {} }
-  const setContent = (key: string, content: Content) =>
-    setSections((prev) => ({ ...prev, [key]: { ...get(key), content } }))
-  const setSec = (key: string, s: Loaded) => setSections((prev) => ({ ...prev, [key]: s }))
+  if (loading) return <EditorSkeleton />
 
   async function saveAll() {
     setSavingAll(true)
     setSaveAllError('')
     try {
-      for (const key of ['explore', 'services', 'cta-banner']) {
-        await saveSection(get(key))
-      }
+      await saveKeys(['explore', 'services', 'cta-banner'])
       toast.success('All About sections saved & published')
       await reload()
     } catch (e: any) {
@@ -125,74 +63,21 @@ export default function AboutEditor() {
           section at once.
         </p>
 
-        <Explore sec={get('explore')} onChange={(c: Content) => setContent('explore', c)} onSaved={reload} setSec={(s: Loaded) => setSec('explore', s)} />
-        <Services sec={get('services')} onChange={(c: Content) => setContent('services', c)} onSaved={reload} setSec={(s: Loaded) => setSec('services', s)} />
-        <CtaBanner sec={get('cta-banner')} onChange={(c: Content) => setContent('cta-banner', c)} onSaved={reload} setSec={(s: Loaded) => setSec('cta-banner', s)} />
+        <Explore sec={get('explore')} onChange={(c: any) => setContent('explore', c)} onSaved={reload} save={saveSection} />
+        <Services sec={get('services')} onChange={(c: any) => setContent('services', c)} onSaved={reload} save={saveSection} />
+        <CtaBanner sec={get('cta-banner')} onChange={(c: any) => setContent('cta-banner', c)} onSaved={reload} save={saveSection} />
       </div>
     </>
   )
 }
 
-function SectionCard({ title, description, sec, onSaved, children }: any) {
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
-  const { toast } = useToast()
-  async function doSave() {
-    setSaving(true)
-    setError('')
-    try {
-      await saveSection(sec)
-      toast.success('Saved & published to the storefront')
-      onSaved()
-    } catch (e: any) {
-      setError(e?.response?.data?.message || e?.message || 'Save failed')
-    } finally {
-      setSaving(false)
-    }
-  }
-  return (
-    <div className="card overflow-hidden">
-      <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/60 flex items-center justify-between gap-4">
-        <div>
-          <h3 className="text-[15px] font-semibold text-slate-900">{title}</h3>
-          <p className="text-xs text-slate-500 mt-0.5">{description}</p>
-        </div>
-        <div className="flex items-center gap-3 shrink-0">
-          {error && <span className="text-xs text-red-600">{error}</span>}
-          <button onClick={doSave} disabled={saving} className="btn-primary">
-            {saving ? 'Saving…' : 'Save & Publish'}
-          </button>
-        </div>
-      </div>
-      <div className="p-5">{children}</div>
-    </div>
-  )
-}
-
-function useList(items: any[], setItems: (n: any[]) => void, blank: () => any) {
-  return {
-    update: (i: number, patch: any) => setItems(items.map((it, idx) => (idx === i ? { ...it, ...patch } : it))),
-    remove: (i: number) => setItems(items.filter((_, idx) => idx !== i)),
-    add: () => setItems([...items, blank()]),
-  }
-}
-
-function Field({ label, children }: any) {
-  return (
-    <div>
-      <label className="form-label">{label}</label>
-      {children}
-    </div>
-  )
-}
-
 // ── Explore / Story blocks ──
-function Explore({ sec, onChange, onSaved }: any) {
+function Explore({ sec, onChange, save, onSaved }: any) {
   const c = sec.content
   const items: any[] = Array.isArray(c.items) ? c.items : []
   const list = useList(items, (next) => onChange({ ...c, items: next }), () => ({ title: '', description: '', file: '', quote: '' }))
   return (
-    <SectionCard title="Story / Explore" description="The alternating image + text blocks (e.g. Our Story, Lab Grown Beyond Compare)." sec={sec} onSaved={onSaved}>
+    <SectionCard title="Story / Explore" description="The alternating image + text blocks (e.g. Our Story, Lab Grown Beyond Compare)." save={() => save(sec)} onSaved={onSaved}>
       <div className="space-y-3">
         {items.map((it, i) => (
           <div key={i} className="flex gap-3 items-start border border-slate-200 rounded-lg p-3">
@@ -214,12 +99,12 @@ function Explore({ sec, onChange, onSaved }: any) {
 }
 
 // ── Services / values grid ──
-function Services({ sec, onChange, onSaved }: any) {
+function Services({ sec, onChange, save, onSaved }: any) {
   const c = sec.content
   const items: any[] = Array.isArray(c.service_items) ? c.service_items : []
   const list = useList(items, (next) => onChange({ ...c, service_items: next }), () => ({ icon: '', title: '', service_description: '' }))
   return (
-    <SectionCard title="The Rangani Standard (values grid)" description="The grid of assurances — certified diamonds, warranty, shipping, etc." sec={sec} onSaved={onSaved}>
+    <SectionCard title="The Rangani Standard (values grid)" description="The grid of assurances — certified diamonds, warranty, shipping, etc." save={() => save(sec)} onSaved={onSaved}>
       <div className="grid grid-cols-2 gap-4 mb-4">
         <Field label="Heading">
           <input className="form-input" value={c.heading || ''} onChange={(e) => onChange({ ...c, heading: e.target.value })} placeholder="The Rangani Standard" />
@@ -248,10 +133,10 @@ function Services({ sec, onChange, onSaved }: any) {
 }
 
 // ── CTA banner ──
-function CtaBanner({ sec, onChange, onSaved }: any) {
+function CtaBanner({ sec, onChange, save, onSaved }: any) {
   const c = sec.content
   return (
-    <SectionCard title="CTA Banner" description="The closing call-to-action banner (e.g. 'Begin Your Forever')." sec={sec} onSaved={onSaved}>
+    <SectionCard title="CTA Banner" description="The closing call-to-action banner (e.g. 'Begin Your Forever')." save={() => save(sec)} onSaved={onSaved}>
       <div className="grid lg:grid-cols-2 gap-5">
         <div className="space-y-3">
           <Field label="Title">

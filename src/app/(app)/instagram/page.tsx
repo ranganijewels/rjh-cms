@@ -1,10 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import PageHeader from '@/components/PageHeader'
 import MediaField from '@/components/MediaField'
-import { useToast } from '@/components/Toast'
-import api from '@/lib/api'
+import { EditorSkeleton } from '@/components/editor'
+import { useSection } from '@/lib/useSections'
 import { Plus, Trash2, ArrowUp, ArrowDown } from 'lucide-react'
 
 const PAGE = 'homepage'
@@ -15,46 +14,24 @@ const blank = (): Reel => ({ media: '', thumbnail: '', link: '', caption: '' })
 
 // Hand-managed "As Seen on Instagram" strip on the home page. No Instagram
 // login or API token needed: upload each reel's video (or a photo), paste the
-// reel's Instagram link, add a caption. Videos get a poster image automatically.
+// reel's Instagram link, add a caption. Videos get a poster image
+// automatically. Section lifecycle (load/save/id) lives in useSection().
 export default function InstagramReelsEditor() {
-  const [items, setItems] = useState<Reel[]>([])
-  const [secId, setSecId] = useState<string | undefined>()
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
-  const { toast } = useToast()
+  const { content, setContent, loading, saving, error, save } = useSection(PAGE, KEY, {
+    createDefaults: { sectionType: 'custom', label: 'Instagram Reels', sortOrder: 90 },
+  })
 
-  useEffect(() => {
-    ;(async () => {
-      try {
-        const r = await api.get('/cms/sections', { params: { pageSlug: PAGE } })
-        const sec = (r.data?.data || []).find((s: any) => s.sectionKey === KEY)
-        setSecId(sec?.id)
-        setItems(Array.isArray(sec?.content?.items) ? sec.content.items : [])
-      } catch (e: any) {
-        setError(e?.message || 'Load failed')
-      } finally {
-        setLoading(false)
-      }
-    })()
-  }, [])
+  const items: Reel[] = Array.isArray(content?.items) ? content.items : []
+  const setItems = (next: Reel[]) => setContent({ ...(content || {}), items: next })
 
-  async function save() {
-    setSaving(true)
-    setError('')
-    try {
-      const clean = items.filter((i) => i.media)
-      const body = { pageSlug: PAGE, sectionKey: KEY, sectionType: 'custom', label: 'Instagram Reels', sortOrder: 90, isPublished: true, content: { items: clean } }
-      const res = secId ? await api.put(`/cms/sections/${secId}`, body) : await api.post('/cms/sections', body)
-      const id = res.data?.data?.id || res.data?.id
-      if (id) setSecId(id)
-      setItems(clean)
-      toast.success('Reels saved — live on the homepage within a minute')
-    } catch (e: any) {
-      setError(e?.response?.data?.message || e?.message || 'Save failed')
-    } finally {
-      setSaving(false)
-    }
+  async function saveReels() {
+    // Drop reels with no media before publishing.
+    const clean = items.filter((i) => i.media)
+    await save({
+      content: { items: clean },
+      successMessage: 'Reels saved — live on the homepage within a minute',
+    })
+    setItems(clean)
   }
 
   const set = (i: number, p: Partial<Reel>) => setItems(items.map((x, n) => (n === i ? { ...x, ...p } : x)))
@@ -64,13 +41,7 @@ export default function InstagramReelsEditor() {
     const a = [...items]; [a[i], a[j]] = [a[j], a[i]]; setItems(a)
   }
 
-  if (loading) return (
-    <div className="card p-6 animate-pulse space-y-3" aria-busy="true" aria-live="polite">
-      <div className="h-4 bg-slate-200 rounded w-1/4" />
-      <div className="h-3 bg-slate-100 rounded w-1/2" />
-      <div className="h-3 bg-slate-100 rounded w-1/3" />
-    </div>
-  )
+  if (loading) return <EditorSkeleton />
 
   return (
     <>
@@ -81,7 +52,7 @@ export default function InstagramReelsEditor() {
           <div className="flex items-center gap-3">
             {error && <span className="text-sm text-red-600">{error}</span>}
             <button onClick={() => setItems([...items, blank()])} className="btn-outline"><Plus className="w-4 h-4" /> Add reel</button>
-            <button onClick={save} disabled={saving} className="btn-primary">{saving ? 'Saving…' : 'Save'}</button>
+            <button onClick={saveReels} disabled={saving} className="btn-primary">{saving ? 'Saving…' : 'Save'}</button>
           </div>
         }
       />

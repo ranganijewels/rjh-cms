@@ -4,85 +4,21 @@ import { useEffect, useRef, useState } from 'react'
 import PageHeader from '@/components/PageHeader'
 import MediaField from '@/components/MediaField'
 import IconPicker from '@/components/IconPicker'
-import { useToast } from '@/components/Toast'
-import api from '@/lib/api'
+import { EditorSkeleton, SectionCard } from '@/components/editor'
+import { useList, useSections, type SectionContent } from '@/lib/useSections'
 import { Plus, Trash2, GripVertical } from 'lucide-react'
 
 const STOREFRONT =
   process.env.NEXT_PUBLIC_STOREFRONT_URL || 'http://localhost:3000'
 const PAGE = 'homepage'
 
-type SectionContent = Record<string, any>
-interface Loaded {
-  id?: string
-  sectionKey: string
-  sectionType: string
-  label: string
-  sortOrder: number
-  content: SectionContent
-}
-
-// Load all homepage sections keyed by sectionKey.
-async function loadSections(): Promise<Record<string, Loaded>> {
-  const r = await api.get('/cms/sections', { params: { pageSlug: PAGE } })
-  const map: Record<string, Loaded> = {}
-  for (const s of r.data?.data || []) {
-    map[s.sectionKey] = {
-      id: s.id,
-      sectionKey: s.sectionKey,
-      sectionType: s.sectionType || 'custom',
-      label: s.label || s.sectionKey,
-      sortOrder: s.sortOrder ?? 0,
-      content: s.content || {},
-    }
-  }
-  return map
-}
-
-async function saveSection(sec: Loaded) {
-  const body = {
-    pageSlug: PAGE,
-    sectionType: sec.sectionType,
-    label: sec.label,
-    sortOrder: sec.sortOrder,
-    isPublished: true,
-    content: sec.content,
-    sectionKey: sec.sectionKey,
-  }
-  if (sec.id) return api.put(`/cms/sections/${sec.id}`, body)
-  return api.post('/cms/sections', body)
-}
-
+// All homepage section load/save state lives in useSections(); this page is
+// pure UI — each card edits one sectionKey's content and saves through the
+// hook (PUT when the section exists, POST otherwise).
 export default function HomepageEditor() {
-  const [sections, setSections] = useState<Record<string, Loaded>>({})
-  const [loading, setLoading] = useState(true)
+  const { loading, get, setContent, saveSection, reload } = useSections(PAGE)
 
-  async function reload() {
-    setLoading(true)
-    try {
-      setSections(await loadSections())
-    } finally {
-      setLoading(false)
-    }
-  }
-  useEffect(() => { reload() }, [])
-
-  if (loading) return (
-    <div className="card p-6 animate-pulse space-y-3" aria-busy="true" aria-live="polite">
-      <div className="h-4 bg-slate-200 rounded w-1/4" />
-      <div className="h-3 bg-slate-100 rounded w-1/2" />
-      <div className="h-3 bg-slate-100 rounded w-1/3" />
-    </div>
-  )
-
-  const get = (key: string, type: string, label: string): Loaded =>
-    sections[key] || { sectionKey: key, sectionType: type, label, sortOrder: 0, content: {} }
-
-  const setContent = (key: string, content: SectionContent) =>
-    setSections((prev) => ({
-      ...prev,
-      [key]: { ...get(key, prev[key]?.sectionType || 'custom', prev[key]?.label || key), content },
-    }))
+  if (loading) return <EditorSkeleton />
 
   return (
     <>
@@ -102,91 +38,20 @@ export default function HomepageEditor() {
           <a href="/banners" className="text-brand-500 underline">Banners &amp; Hero</a>.
         </p>
 
-        <FeaturedCollections sec={get('featured-collection', 'featured-collection', 'Featured Collections')} onChange={(c: SectionContent) => setContent('featured-collection', c)} onSaved={reload} save={saveSection} />
+        <FeaturedCollections sec={get('featured-collection', { sectionType: 'featured-collection', label: 'Featured Collections' })} onChange={(c: SectionContent) => setContent('featured-collection', c)} onSaved={reload} save={saveSection} />
 
-        <DiamondShapes sec={get('product-variants', 'product-variants', 'Diamond Shapes')} onChange={(c: SectionContent) => setContent('product-variants', c)} onSaved={reload} save={saveSection} setSec={(s: Loaded) => setSections((p) => ({ ...p, 'product-variants': s }))} />
+        <DiamondShapes sec={get('product-variants', { sectionType: 'product-variants', label: 'Diamond Shapes' })} onChange={(c: SectionContent) => setContent('product-variants', c)} onSaved={reload} save={saveSection} />
 
-        <WhyChoose sec={get('why-choose', 'why-choose', 'Why Choose')} onChange={(c: SectionContent) => setContent('why-choose', c)} onSaved={reload} save={saveSection} setSec={(s: Loaded) => setSections((p) => ({ ...p, 'why-choose': s }))} />
+        <WhyChoose sec={get('why-choose', { sectionType: 'why-choose', label: 'Why Choose' })} onChange={(c: SectionContent) => setContent('why-choose', c)} onSaved={reload} save={saveSection} />
 
-        <DiscoverStylesEditor sec={get('discover-styles', 'discover-styles', 'Discover Styles')} onChange={(c: SectionContent) => setContent('discover-styles', c)} onSaved={reload} save={saveSection} setSec={(s: Loaded) => setSections((p) => ({ ...p, 'discover-styles': s }))} />
+        <DiscoverStylesEditor sec={get('discover-styles', { sectionType: 'discover-styles', label: 'Discover Styles' })} onChange={(c: SectionContent) => setContent('discover-styles', c)} onSaved={reload} save={saveSection} />
 
-        <PromoBanner sec={get('promo-banner', 'banner', 'Promo Banner')} onChange={(c: SectionContent) => setContent('promo-banner', c)} onSaved={reload} save={saveSection} setSec={(s: Loaded) => setSections((p) => ({ ...p, 'promo-banner': s }))} />
+        <PromoBanner sec={get('promo-banner', { sectionType: 'banner', label: 'Promo Banner' })} onChange={(c: SectionContent) => setContent('promo-banner', c)} onSaved={reload} save={saveSection} />
 
-        <Reviews sec={get('customer-reviews', 'testimonials', 'Customer Reviews')} onChange={(c: SectionContent) => setContent('customer-reviews', c)} onSaved={reload} save={saveSection} setSec={(s: Loaded) => setSections((p) => ({ ...p, 'customer-reviews': s }))} />
+        <Reviews sec={get('customer-reviews', { sectionType: 'testimonials', label: 'Customer Reviews' })} onChange={(c: SectionContent) => setContent('customer-reviews', c)} onSaved={reload} save={saveSection} />
       </div>
     </>
   )
-}
-
-// ─── Shared section-card wrapper with Save ───────────────────────────────────
-
-function SectionCard({
-  title,
-  description,
-  sec,
-  save,
-  onSaved,
-  children,
-}: {
-  title: string
-  description: string
-  sec: Loaded
-  save: (s: Loaded) => Promise<any>
-  onSaved: () => void
-  children: React.ReactNode
-}) {
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
-  const { toast } = useToast()
-
-  async function doSave() {
-    setSaving(true)
-    setError('')
-    try {
-      await save(sec)
-      toast.success('Saved & published to the storefront')
-      onSaved()
-    } catch (e: any) {
-      setError(e?.response?.data?.message || e?.message || 'Save failed')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  return (
-    <div className="card overflow-hidden">
-      <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/60 flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-[15px] font-semibold text-slate-900">{title}</h2>
-          <p className="text-xs text-slate-500 mt-0.5">{description}</p>
-        </div>
-        <div className="flex items-center gap-3 shrink-0">
-          {error && <span className="text-xs text-red-600">{error}</span>}
-          <button onClick={doSave} disabled={saving} className="btn-primary">
-            {saving ? 'Saving…' : 'Save & Publish'}
-          </button>
-        </div>
-      </div>
-      <div className="p-5">{children}</div>
-    </div>
-  )
-}
-
-// Small helper to edit a repeatable array of card items.
-function useList<T>(items: T[], setItems: (next: T[]) => void, blank: () => T) {
-  return {
-    update: (i: number, patch: Partial<T>) =>
-      setItems(items.map((it, idx) => (idx === i ? { ...it, ...patch } : it))),
-    remove: (i: number) => setItems(items.filter((_, idx) => idx !== i)),
-    add: () => setItems([...items, blank()]),
-    move: (i: number, dir: -1 | 1) => {
-      const j = i + dir
-      if (j < 0 || j >= items.length) return
-      const next = [...items]
-      ;[next[i], next[j]] = [next[j], next[i]]
-      setItems(next)
-    },
-  }
 }
 
 // ─── Featured Collections ────────────────────────────────────────────────────
@@ -196,7 +61,7 @@ function FeaturedCollections({ sec, onChange, save, onSaved }: any) {
   const banners: any[] = Array.isArray(c.banners) ? c.banners : []
   const list = useList(banners, (next) => onChange({ ...c, banners: next }), () => ({ text: '', link: '/product', imageUrl: '' }))
   return (
-    <SectionCard title="Featured Collections" description="The 4 category cards below the hero (Diamond Rings, Necklaces, Earrings, Bangles…)." sec={sec} save={save} onSaved={onSaved}>
+    <SectionCard title="Featured Collections" description="The 4 category cards below the hero (Diamond Rings, Necklaces, Earrings, Bangles…)." save={() => save(sec)} onSaved={onSaved}>
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div>
           <label className="form-label">Heading</label>
@@ -230,7 +95,7 @@ function DiamondShapes({ sec, onChange, save, onSaved }: any) {
   const banners: any[] = Array.isArray(c.banners) ? c.banners : []
   const list = useList(banners, (next) => onChange({ ...c, banners: next }), () => ({ text: '', link: '/product', imageUrl: '' }))
   return (
-    <SectionCard title="Diamond Shapes (Personalized Shopping)" description="The shape thumbnails (Round, Oval, Pear, Princess…) in the Personalized Shopping Experience block." sec={sec} save={save} onSaved={onSaved}>
+    <SectionCard title="Diamond Shapes (Personalized Shopping)" description="The shape thumbnails (Round, Oval, Pear, Princess…) in the Personalized Shopping Experience block." save={() => save(sec)} onSaved={onSaved}>
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div>
           <label className="form-label">Heading</label>
@@ -262,7 +127,7 @@ function DiscoverStylesEditor({ sec, onChange, save, onSaved }: any) {
   const styles: any[] = Array.isArray(c.styles) ? c.styles : []
   const list = useList(styles, (next) => onChange({ ...c, styles: next }), () => ({ title: '', description: '', imageUrl: '', link: '/product' }))
   return (
-    <SectionCard title="Discover Styles" description="The coverflow carousel of ring styles (Solitaire, Halo, Three Stone…) after Why Choose." sec={sec} save={save} onSaved={onSaved}>
+    <SectionCard title="Discover Styles" description="The coverflow carousel of ring styles (Solitaire, Halo, Three Stone…) after Why Choose." save={() => save(sec)} onSaved={onSaved}>
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div>
           <label className="form-label">Heading</label>
@@ -295,7 +160,7 @@ function WhyChoose({ sec, onChange, save, onSaved }: any) {
   const features: any[] = Array.isArray(c.features) ? c.features : []
   const list = useList(features, (next) => onChange({ ...c, features: next }), () => ({ icon: 'gem', title: '', description: '' }))
   return (
-    <SectionCard title="Why Choose RJ House" description="The value-props block and its background video." sec={sec} save={save} onSaved={onSaved}>
+    <SectionCard title="Why Choose RJ House" description="The value-props block and its background video." save={() => save(sec)} onSaved={onSaved}>
       <div className="grid lg:grid-cols-2 gap-5">
         <div className="space-y-3">
           <div>
@@ -327,7 +192,7 @@ function WhyChoose({ sec, onChange, save, onSaved }: any) {
 function PromoBanner({ sec, onChange, save, onSaved }: any) {
   const c = sec.content
   return (
-    <SectionCard title="Promo Banner" description="The full-width 'Your Dream Jewelry Awaits' banner near the bottom of the home page." sec={sec} save={save} onSaved={onSaved}>
+    <SectionCard title="Promo Banner" description="The full-width 'Your Dream Jewelry Awaits' banner near the bottom of the home page." save={() => save(sec)} onSaved={onSaved}>
       <div className="grid lg:grid-cols-2 gap-5">
         <div className="space-y-3">
           <div>
@@ -359,7 +224,7 @@ function Reviews({ sec, onChange, save, onSaved }: any) {
   const list = useList(reviews, (next) => onChange({ ...c, reviews: next }), () => ({ text: '', description: '', rating: 5, imageUrl: '', source: '', consent: false }))
   const live = reviews.filter((r) => r?.consent === true && String(r?.source || '').trim()).length
   return (
-    <SectionCard title="Customer Reviews" description={`Testimonials shown on the site. Record each quote's source and the customer's permission (${live} of ${reviews.length} documented).`} sec={sec} save={save} onSaved={onSaved}>
+    <SectionCard title="Customer Reviews" description={`Testimonials shown on the site. Record each quote's source and the customer's permission (${live} of ${reviews.length} documented).`} save={() => save(sec)} onSaved={onSaved}>
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div>
           <label className="form-label">Heading</label>
