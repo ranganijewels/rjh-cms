@@ -6,6 +6,7 @@ import DataTable from '@/components/DataTable'
 import EmptyState from '@/components/EmptyState'
 import Dialog from '@/components/Dialog'
 import api from '@/lib/api'
+import { useToast } from '@/components/Toast'
 import { LayoutTemplate, Plus } from 'lucide-react'
 
 interface Section {
@@ -47,6 +48,7 @@ function toApi(s: Section, pageSlug: string): any {
 const PAGES = ['homepage', 'about-us', 'contact-us', 'blog', 'collections']
 
 export default function SectionsPage() {
+  const { toast } = useToast()
   const [pageSlug, setPageSlug] = useState('homepage')
   const [rows, setRows] = useState<Section[]>([])
   const [loading, setLoading] = useState(true)
@@ -65,28 +67,46 @@ export default function SectionsPage() {
   }
   useEffect(() => { reload() }, [pageSlug])
 
+  const errMsg = (e: any, fallback: string) => e?.response?.data?.message || e?.message || fallback
+
   async function save() {
     if (!editing) return
-    if (editing.id) {
-      await api.put(`/cms/sections/${editing.id}`, toApi(editing, pageSlug))
-    } else {
-      await api.post('/cms/sections', toApi(editing, pageSlug))
+    const isNew = !editing.id
+    try {
+      if (editing.id) {
+        await api.put(`/cms/sections/${editing.id}`, toApi(editing, pageSlug))
+      } else {
+        await api.post('/cms/sections', toApi(editing, pageSlug))
+      }
+      toast.success(isNew ? 'Section added' : 'Section saved')
+      setEditing(null)
+      reload()
+    } catch (e: any) {
+      toast.error(errMsg(e, 'Failed to save section'))
     }
-    setEditing(null)
-    reload()
   }
 
   async function remove(s: Section) {
     if (!s.id) return
     if (!confirm(`Delete section "${s.title || s.type}"?`)) return
-    await api.delete(`/cms/sections/${s.id}`)
-    reload()
+    try {
+      await api.delete(`/cms/sections/${s.id}`)
+      toast.success('Section deleted')
+      reload()
+    } catch (e: any) {
+      toast.error(errMsg(e, 'Failed to delete section'))
+    }
   }
 
   async function seedDefaults() {
     if (!confirm(`Seed default sections for /${pageSlug}?`)) return
-    await api.post('/cms/sections/seed', { pageSlug })
-    reload()
+    try {
+      await api.post('/cms/sections/seed', { pageSlug })
+      toast.success('Default sections added')
+      reload()
+    } catch (e: any) {
+      toast.error(errMsg(e, 'Failed to seed sections'))
+    }
   }
 
   return (

@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation'
 import Image from 'next/image'
 import PageHeader from '@/components/PageHeader'
 import api from '@/lib/api'
+import { useToast } from '@/components/Toast'
 
 export default function BlogEditor() {
   const { slug } = useParams<{ slug: string }>()
@@ -21,6 +22,7 @@ export default function BlogEditor() {
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const { toast } = useToast()
   const [message, setMessage] = useState('')
 
   useEffect(() => {
@@ -50,9 +52,9 @@ export default function BlogEditor() {
         ...form,
         tags: form.tags.split(',').map((t) => t.trim()).filter(Boolean),
       })
-      setMessage('Saved')
+      toast.success('Blog post saved')
     } catch (e: any) {
-      setMessage(e?.response?.data?.message || 'Failed to save')
+      toast.error(e?.response?.data?.message || 'Failed to save')
     } finally {
       setSaving(false)
     }

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import PageHeader from '@/components/PageHeader'
 import api from '@/lib/api'
+import { useToast } from '@/components/Toast'
 import StandardMenuEditor from '@/components/megaMenu/StandardMenuEditor'
 import MediaTilesEditor from '@/components/megaMenu/MediaTilesEditor'
 import { LayoutGrid, Loader2 } from 'lucide-react'
@@ -43,6 +44,7 @@ export default function MegaMenuPage() {
   const [seeding, setSeeding] = useState(false)
   const [saving, setSaving] = useState(false)
   const [active, setActive] = useState<string | null>(null)
+  const { toast } = useToast()
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
@@ -145,13 +147,15 @@ export default function MegaMenuPage() {
       }
 
       await load()
-      setMessage(
+      toast.success(
         cloned > 0
           ? `Starter content loaded for ${cloned} menu${cloned === 1 ? '' : 's'}`
           : 'Starter content loaded'
       )
     } catch (e: any) {
-      setError(e?.response?.data?.message || e?.message || 'Failed to load starter content')
+      const msg = e?.response?.data?.message || e?.message || 'Failed to load starter content'
+      setError(msg)
+      toast.error(msg)
     } finally {
       setSeeding(false)
     }
@@ -174,7 +178,11 @@ export default function MegaMenuPage() {
       const payload = {
         pageSlug: PAGE_SLUG,
         sectionKey: sec.sectionKey,
-        sectionType: sec.sectionType,
+        // Derive from the nav item's CURRENT layout: an existing row can
+        // carry the type from before a layout flip (tiles ↔ columns), and
+        // the storefront dispatches its renderer on this value — a stale
+        // type makes it keep rendering the old panel.
+        sectionType: activeItem.layout === 'tiles' ? 'mega-menu-tiles' : 'mega-menu',
         label: activeItem.label,
         sortOrder: sec.sortOrder ?? 0,
         isPublished: true,
@@ -185,9 +193,11 @@ export default function MegaMenuPage() {
         : await api.post('/cms/sections', payload)
       const saved = res.data?.data ?? res.data
       setSections((prev) => ({ ...prev, [activeItem.key]: saved }))
-      setMessage(`${activeItem.label} menu saved & published`)
+      toast.success(`${activeItem.label} menu saved & published`)
     } catch (e: any) {
-      setError(e?.response?.data?.message || e?.message || 'Save failed')
+      const msg = e?.response?.data?.message || e?.message || 'Save failed'
+      setError(msg)
+      toast.error(msg)
     } finally {
       setSaving(false)
     }

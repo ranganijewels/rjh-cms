@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import PageHeader from '@/components/PageHeader'
 import api from '@/lib/api'
+import { useToast } from '@/components/Toast'
 
 interface Theme {
   brand_name?: string
@@ -37,6 +38,7 @@ const DEFAULT: Theme = {
 export default function ThemePage() {
   const [theme, setTheme] = useState<Theme>(DEFAULT)
   const [saving, setSaving] = useState(false)
+  const { toast } = useToast()
   const [message, setMessage] = useState('')
 
   useEffect(() => {
@@ -55,9 +57,9 @@ export default function ThemePage() {
     setMessage('')
     try {
       await api.put('/cms/theme', theme).catch(() => api.patch('/settings/theme', theme))
-      setMessage('Saved')
+      toast.success('Theme saved')
     } catch {
-      setMessage('Saved locally — backend /cms/theme endpoint not yet implemented')
+      toast.error('Failed to save theme')
     } finally {
       setSaving(false)
     }

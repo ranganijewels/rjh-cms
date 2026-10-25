@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
 import PageHeader from '@/components/PageHeader'
 import api from '@/lib/api'
+import { useToast } from '@/components/Toast'
 
 // Lightweight client-side sanitizer for the live preview only.
 // The server is still the source of truth for sanitization at save-time;
@@ -40,6 +41,7 @@ export default function PageEditor() {
   const [published, setPublished] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const { toast } = useToast()
   const [message, setMessage] = useState('')
   const [showPreview, setShowPreview] = useState(false)
   const bodyRef = useRef<HTMLTextAreaElement>(null)
@@ -88,9 +90,9 @@ export default function PageEditor() {
         is_published: published,
         status: published ? 'published' : 'draft',
       })
-      setMessage('Saved')
+      toast.success('Page saved')
     } catch (e: any) {
-      setMessage(e?.response?.data?.message || 'Failed to save')
+      toast.error(e?.response?.data?.message || 'Failed to save')
     } finally {
       setSaving(false)
     }
@@ -99,8 +101,11 @@ export default function PageEditor() {
   async function toggleStatus() {
     try {
       await api.patch(`/cms/pages/${slug}/status`, {})
+      toast.success(published ? 'Page unpublished' : 'Page published')
       setPublished((p) => !p)
-    } catch {}
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || 'Failed to change status')
+    }
   }
 
   if (loading) return (
